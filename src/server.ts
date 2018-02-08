@@ -1,5 +1,5 @@
-const express = require('express');
-const db = require('./db');
+import * as express from 'express';
+import * as db from './db';
 
 const PORT = process.env.PORT || 8060;
 
@@ -17,6 +17,10 @@ app.get('/test', async (req, res) => {
 });
 
 app.get('/login', async (req, res) => {
+  res.send(await db.checkLogin(req.query.username, req.query.password));
+});
+
+app.get('/getUserStatus', async (req, res) => {
   res.send(await db.checkLogin(req.query.username, req.query.password));
 });
 
