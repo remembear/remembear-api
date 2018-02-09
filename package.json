@@ -1,5 +1,5 @@
 {
-  "name": "rememberize-api",
+  "name": "remembear-api",
   "version": "0.0.1",
   "description": "",
   "main": "server.js",
@@ -18,12 +18,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/florianthalmann/rememberize-api.git"
+    "url": "git+https://github.com/florianthalmann/remembear-api.git"
   },
   "author": "florianthalmann",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/florianthalmann/rememberize-api/issues"
+    "url": "https://github.com/florianthalmann/remembear-api/issues"
   },
-  "homepage": "https://github.com/florianthalmann/rememberize-api#readme"
+  "homepage": "https://github.com/florianthalmann/remembear-api#readme"
 }

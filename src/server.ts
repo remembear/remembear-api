@@ -1,5 +1,7 @@
 import * as express from 'express';
+import { VOCAB } from './consts';
 import * as db from './db';
+import * as qrs from './queries';
 
 const PORT = process.env.PORT || 8060;
 
@@ -13,21 +15,17 @@ app.use((req, res, next) => {
 });
 
 app.get('/test', async (req, res) => {
-  res.send(await db.getRandomDoc('core10k'));
+  res.send(await qrs.getNewQuestions(req.query.username, VOCAB, 0));
 });
 
 app.get('/login', async (req, res) => {
   res.send(await db.checkLogin(req.query.username, req.query.password));
 });
 
-app.get('/getUserStatus', async (req, res) => {
-  res.send(await db.checkLogin(req.query.username, req.query.password));
-});
-
 async function init() {
   await db.connect();
   app.listen(PORT, () => {
-    console.log('rememberize server live on ' + PORT);
+    console.log('remembear server live on ' + PORT);
   });
 }
 
