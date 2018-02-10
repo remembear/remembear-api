@@ -12,7 +12,7 @@ export const VOC_AUD = "Vocab-audio";
 
 export const KANJI: Set = {
   collection: "kanji",
-  indexField: "2k1KO Index",
+  idField: "2k1KO Index",
   directions: [
     [KAN_KAN, KAN_ENG, []],
     [KAN_ENG, KAN_KAN, []]
@@ -22,7 +22,7 @@ export const KANJI: Set = {
 
 export const VOCAB: Set = {
   collection: "core10k",
-  indexField: "2k1-Kanken Opt Sort",
+  idField: "2k1-Kanken Opt Sort",
   directions: [
     [VOC_ENG, VOC_JAP, [VOC_KNA]],
     [VOC_JAP, VOC_KNA, [VOC_ENG]],

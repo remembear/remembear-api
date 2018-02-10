@@ -1,53 +1,57 @@
 export type Id = number;
-export type Datetime = number;
 
 export interface Set {
   collection: string,
-  indexField: string,
+  idField: string,
   directions: [string, string, string[]][], //question, answer, fields to show after
   info: string[], //fields to show during question
   audio?: string
 }
 
-export enum Directions {
-  kanjiJapEng, kanjiEngJap,
-  wordsEngJap, wordsJapHir, wordsAudEng,
-  sentsAudJap, sentsAudEng
-}
-
 export interface User {
   username: string,
-  wordsKnownByLevel: number[], //sum by levels
-  wordsKnownBySet: number[], //sum by levels
   dailyGoal?: number,
   streak?: number
 }
 
-export interface Study {
-  username: string,
-  direction: Directions,
-  points: number,
-  startTime: Datetime,
-  endTime: Datetime,
-  questions: Answer[]
+export interface UserStatus {
+  wordsKnownByLevel: number[], //sum by levels
+  wordsKnownByDirection: number[], //sum by direction
+  wordsToReviewByDirection: number[],
+  totalPoints: number,
+  latestPoints: number
 }
 
-export interface Answer {
-  question: number, //word/kanji id
-  answer: string,
-  attempts: number,
-  startTime: Datetime,
-  endTime: Datetime
+export interface Study {
+  collection: string,
+  direction: number,
+  startTime: Date,
+  endTime: Date,
+  questions: Question[],
+  answers: Answer[]
+}
+
+export interface MemoryFilter {
+  collection: string,
+  wordId: number,
+  direction: number
 }
 
 //in user collection
 export interface Memory {
-  word: Id,
-  levels: number[], //by direction
-  nextUp: Datetime[] //by direction
+  collection: string,
+  wordId: number,
+  direction: number,
+  previouslyKnown: boolean,
+  thinkingTime: number,
+  answers: string[],
+  level: number,
+  nextUp: Date
 }
 
 export interface Question {
+  collection: string,
+  wordId: number,
   question: string,
   answers: string[],
   otherFields: string[],
@@ -55,10 +59,8 @@ export interface Question {
   audio?: string
 }
 
-export interface Word {
-  japanese: string,
-  kana: string,
-  translation: string,
-  info: string,
-  audio: string
+export interface Answer {
+  wordId: number,
+  attempts: string[],
+  duration: number
 }
