@@ -1,6 +1,7 @@
 import { MongoClient, Db } from 'mongodb';
 import { URL } from './config';
 import { User, Memory, MemoryFilter } from './types';
+import { SETS } from './consts';
 
 interface InternalUser extends User {
   password: string,
@@ -80,19 +81,25 @@ export async function getMemoryByLevel(username) {
 }
 
 export async function findReviewByDirection(username) {
-  let groups = await db.collection(username+"_")
-    .aggregate([
-       { $match: {nextUp: {$lt: new Date(Date.now())} } },
-       { $group: { _id: { coll: "$collection", dir: "$direction"}, count: { $sum: 1 } } }
-    ]).toArray();
-  return groups.map(g => g["count"]);
+  let groups = await db.collection(username+"_").aggregate([
+    { $match: {nextUp: {$lt: new Date(Date.now())} } },
+    { $group: { _id: { coll: "$collection", dir: "$direction"}, count: { $sum: 1 } } }
+  ]).toArray();
+  return mapToSets(groups);
 }
 
 export async function getMemoryByDirection(username) {
   let groups = await db.collection(username+"_").aggregate([
-     { $group: { _id: { coll: "$collection", dir: "$direction"}, count: { $sum: 1 } } }
+    { $group: { _id: { coll: "$collection", dir: "$direction"}, count: { $sum: 1 } } }
   ]).toArray();
-  return groups.map(g => g["count"]);
+  return mapToSets(groups);
+}
+
+function mapToSets(groupedResults: {count: number}[]) {
+  return SETS.map(s => s.directions.map((d,i) => {
+    let group = groupedResults.filter(g => g["_id"].coll === s.collection && g["_id"].dir === i);
+    return group.length > 0 ? group[0].count : 0
+  }));
 }
 
 export async function checkLogin(username, password): Promise<{}> {

@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import { User, Set, Question, Study, Memory, UserStatus } from './types';
-import { AUDIO_LOCATION } from './consts';
+import { AUDIO_LOCATION, SETS } from './consts';
 import * as db from './db';
 
 //words come back after about LEVEL_FACTOR*2^(level-1) days, e.g. 6: [(1),6,12,24,48,..]
@@ -14,7 +14,18 @@ interface MemoryUpdate {
   duration: number
 }
 
-export async function getReviewQuestions(username: string, set: Set, direction: number): Promise<Study> {
+export async function getUserStatus(username: string, latestPoints?: number): Promise<UserStatus> {
+  return {
+    wordsKnownByLevel: await db.getMemoryByLevel(username),
+    wordsKnownByDirection: await db.getMemoryByDirection(username),
+    wordsToReviewByDirection: await db.findReviewByDirection(username),
+    totalPoints: await db.getTotalPoints(username),
+    latestPoints: latestPoints ? latestPoints : 0
+  }
+}
+
+export async function getReviewQuestions(username: string, setIndex: number, direction: number): Promise<Study> {
+  let set = SETS[setIndex];
   let reviews = [];
   let mems = await db.findIdsToReview(username, set.collection, direction);
   while (mems.length > 0 && reviews.length < 10) {
@@ -25,13 +36,13 @@ export async function getReviewQuestions(username: string, set: Set, direction: 
   return toStudy(entries, set, direction);
 }
 
-export async function getNewQuestions(username: string, set: Set, direction: number): Promise<Study> {
+export async function getNewQuestions(username: string, setIndex: number, direction: number): Promise<Study> {
+  let set = SETS[setIndex];
   let maxId = 0;
   try {
     maxId = await db.findMaxIdInMemory(username, set.collection, direction);
   } catch (e) {}
   let entries = await db.findTen(set.collection, {[set.idField]: {$gt: maxId}});
-  //entries = entries.slice(0,1);
   return toStudy(entries, set, direction);
 }
 
@@ -45,16 +56,6 @@ export async function addResults(username: string, study: Study): Promise<UserSt
     duration: a.duration
   })))
   .then(points => getUserStatus(username, _.sum(points)));
-}
-
-export async function getUserStatus(username: string, latestPoints?: number): Promise<UserStatus> {
-  return {
-    wordsKnownByLevel: await db.getMemoryByLevel(username),
-    wordsKnownByDirection: await db.getMemoryByDirection(username),
-    wordsToReviewByDirection: await db.findReviewByDirection(username),
-    totalPoints: await db.getTotalPoints(username),
-    latestPoints: latestPoints ? latestPoints : 0
-  }
 }
 
 async function updateMemory(username: string, update: MemoryUpdate): Promise<number> {
@@ -90,11 +91,18 @@ function toQuestion(entry: {}, set: Set, dirIndex: number): Question {
     collection: set.collection,
     wordId: entry[set.idField],
     question: entry[dir[0]],
-    answers: entry[dir[1]].split(','),
+    answers: toAnswers(entry[dir[1]]),
+    fullAnswers: entry[dir[1]],
     otherFields: dir[2].map(f => entry[f]),
-    info: set.info.map(f => entry[f]).join(',　'),
+    info: set.info.map(f => entry[f]).join('    '),
     audio: set.audio ? toAudioPath(entry[set.audio]) : undefined
   }
+}
+
+function toAnswers(entry: string) {
+  return entry.split(',')
+    .map(e => e.replace(/ *\([^)]*\) */g, "")) //remove parentheses
+    .map(e => _.trim(_.toLower(e))); //lower case and remove whitespace
 }
 
 function toAudioPath(audio: string) {

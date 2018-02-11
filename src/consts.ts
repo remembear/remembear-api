@@ -10,19 +10,28 @@ export const VOC_KNA = "Vocab-kana";
 export const VOC_ENG = "Vocab-translation";
 export const VOC_AUD = "Vocab-audio";
 
-export const KANJI: Set = {
+export const SETS: Set[] = [{
+  name: "Kanji",
   collection: "kanji",
   idField: "2k1KO Index",
+  directionNames: [
+    "Reading",
+    "Writing"
+  ],
   directions: [
     [KAN_KAN, KAN_ENG, []],
     [KAN_ENG, KAN_KAN, []]
   ],
   info: []
-}
-
-export const VOCAB: Set = {
+}, {
+  name: "Vocab",
   collection: "core10k",
   idField: "2k1-Kanken Opt Sort",
+  directionNames: [
+    "Writing",
+    "Reading",
+    "Listening"
+  ],
   directions: [
     [VOC_ENG, VOC_JAP, [VOC_KNA]],
     [VOC_JAP, VOC_KNA, [VOC_ENG]],
@@ -30,4 +39,4 @@ export const VOCAB: Set = {
   ],
   info: ["Part of speech", "Word-type", "Vocab-RTK"],
   audio: VOC_AUD
-}
+}];

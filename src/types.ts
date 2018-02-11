@@ -1,8 +1,10 @@
 export type Id = number;
 
 export interface Set {
+  name: string,
   collection: string,
   idField: string,
+  directionNames: string[],
   directions: [string, string, string[]][], //question, answer, fields to show after
   info: string[], //fields to show during question
   audio?: string
@@ -16,8 +18,8 @@ export interface User {
 
 export interface UserStatus {
   wordsKnownByLevel: number[], //sum by levels
-  wordsKnownByDirection: number[], //sum by direction
-  wordsToReviewByDirection: number[],
+  wordsKnownByDirection: number[][], //sum by direction
+  wordsToReviewByDirection: number[][],
   totalPoints: number,
   latestPoints: number
 }
@@ -54,6 +56,7 @@ export interface Question {
   wordId: number,
   question: string,
   answers: string[],
+  fullAnswers: string,
   otherFields: string[],
   info: string,
   audio?: string

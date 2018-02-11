@@ -1,6 +1,5 @@
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
-import { VOCAB } from './consts';
 import * as db from './db';
 import * as qrs from './queries';
 
@@ -25,11 +24,13 @@ app.get('/status', async (req, res) => {
 });
 
 app.get('/new', async (req, res) => {
-  res.send(await qrs.getNewQuestions(req.query.username, VOCAB, 0));
+  res.send(await qrs.getNewQuestions(req.query.username,
+    parseInt(req.query.setIndex), parseInt(req.query.dirIndex)));
 });
 
 app.get('/review', async (req, res) => {
-  res.send(await qrs.getReviewQuestions(req.query.username, VOCAB, 0));
+  res.send(await qrs.getReviewQuestions(req.query.username,
+    parseInt(req.query.setIndex), parseInt(req.query.dirIndex)));
 });
 
 app.post('/results', async (req, res) => {
@@ -42,8 +43,9 @@ async function init() {
     console.log('remembear server live on ' + PORT);
   });
   //console.log(await db.findMaxIdInMemory('test', 'core10k', 0));
-  //console.log(await qrs.getNewQuestions('test', VOCAB, 0));
-  //console.log(await qrs.getReviewQuestions('test', VOCAB, 0));
+  //console.log(await db.findReviewByDirection('test'));
+  //console.log(await db.getMemoryByDirection('test'));
+  await qrs.getReviewQuestions('test', 1, 0);
   /*console.log(await db.toInt("kanji", "stroke count"));
   console.log(await db.toInt('kanji', "Heisig RTK Index"));
   console.log(await db.toInt('kanji', "RTK2 Index"));
