@@ -19,6 +19,10 @@ app.get('/login', async (req, res) => {
   res.send(await db.checkLogin(req.query.username, req.query.password));
 });
 
+app.get('/test', async (req, res) => {
+  res.send(await qrs.getUserStatus('test'));
+});
+
 app.get('/status', async (req, res) => {
   res.send(await qrs.getUserStatus(req.query.username));
 });

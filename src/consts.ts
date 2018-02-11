@@ -1,6 +1,6 @@
 import { Set } from './types';
 
-export const AUDIO_LOCATION = 'http://localhost:8060/';
+export const AUDIO_LOCATION = "https://remembear-api.herokuapp.com/"//'http://localhost:8060/';
 
 export const KAN_KAN = "Kanji";
 export const KAN_ENG = "English Meaning";
