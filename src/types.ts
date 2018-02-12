@@ -58,7 +58,7 @@ export interface Question {
   answers: string[],
   fullAnswers: string,
   otherFields: string[],
-  info: string,
+  info: string[],
   audio?: string
 }
 

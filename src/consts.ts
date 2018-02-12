@@ -19,8 +19,8 @@ export const SETS: Set[] = [{
     "Writing"
   ],
   directions: [
-    [KAN_KAN, KAN_ENG, []],
-    [KAN_ENG, KAN_KAN, []]
+    [KAN_KAN, KAN_ENG, ["stroke count", "Kana", "Primitive look-up data."]],
+    [KAN_ENG, KAN_KAN, ["stroke count", "Kana", "Primitive look-up data."]]
   ],
   info: []
 }, {

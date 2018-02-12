@@ -94,7 +94,7 @@ function toQuestion(entry: {}, set: Set, dirIndex: number): Question {
     answers: toAnswers(entry[dir[1]]),
     fullAnswers: entry[dir[1]],
     otherFields: dir[2].map(f => entry[f]),
-    info: set.info.map(f => entry[f]).join('    '),
+    info: set.info.map(f => entry[f]),
     audio: set.audio ? toAudioPath(entry[set.audio]) : undefined
   }
 }
