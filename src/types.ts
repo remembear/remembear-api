@@ -1,5 +1,3 @@
-export type Id = number;
-
 export interface Set {
   name: string,
   collection: string,
@@ -21,11 +19,13 @@ export interface UserStatus {
   wordsKnownByDirection: number[][], //sum by direction
   wordsToReviewByDirection: number[][],
   totalPoints: number,
+  pointsByDay: number[],
   latestPoints: number
 }
 
 export interface Study {
-  collection: string,
+  type: string,
+  set: number,
   direction: number,
   startTime: Date,
   endTime: Date,
@@ -33,26 +33,7 @@ export interface Study {
   answers: Answer[]
 }
 
-export interface MemoryFilter {
-  collection: string,
-  wordId: number,
-  direction: number
-}
-
-//in user collection
-export interface Memory {
-  collection: string,
-  wordId: number,
-  direction: number,
-  previouslyKnown: boolean,
-  thinkingTime: number,
-  answers: string[],
-  level: number,
-  nextUp: Date
-}
-
 export interface Question {
-  collection: string,
   wordId: number,
   question: string,
   answers: string[],
@@ -64,6 +45,10 @@ export interface Question {
 
 export interface Answer {
   wordId: number,
-  attempts: string[],
+  attempts: Attempt[]
+}
+
+export interface Attempt {
+  answer: string,
   duration: number
 }

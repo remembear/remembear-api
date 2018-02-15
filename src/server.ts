@@ -8,6 +8,7 @@ const PORT = process.env.PORT || 8060;
 const app = express();
 app.use(bodyParser.json());
 app.use(express.static('data/audio-words/'));
+app.use(express.static('data/audio-sentences/'));
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");

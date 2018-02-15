@@ -1,12 +1,7 @@
-import { MongoClient, Db } from 'mongodb';
+import { MongoClient, Db, ObjectID } from 'mongodb';
 import { URL } from './config';
-import { User, Memory, MemoryFilter } from './types';
+import { DbUser, Memory, MemoryFilter, MemoryUpdate,　DbStudy, DbAnswer } from './db-types';
 import { SETS } from './consts';
-
-interface InternalUser extends User {
-  password: string,
-  created: Date
-}
 
 let db: Db;
 
@@ -27,53 +22,65 @@ export function findTen(collection: string, query?: {}) {
   return db.collection(collection).find(query).limit(10).toArray();
 }
 
+export function insertStudy(username: string, study: DbStudy): Promise<ObjectID> {
+  return db.collection(username+"_studies").insertOne(study).then(o => o.insertedId);
+}
+
+export function updateStudy(username: string, study: DbStudy, points: number) {
+  return db.collection(username+"_studies").updateOne(study, { $set: {points: points} });
+}
+
 export function findMemory(username: string, filter: MemoryFilter): Promise<Memory> {
-  return findOne(username+"_", filter);
+  return findOne(username+"_memories", filter);
 }
 
 export function insertMemory(username: string, memory: MemoryFilter) {
-  return db.collection(username+"_").insertOne(memory);
+  return db.collection(username+"_memories").insertOne(memory);
 }
 
-export function updateMemory(username: string, memory: MemoryFilter, level: number,
-    thinkingTime: number, answers: string[], nextUp: Date) {
-  return db.collection(username+"_").updateOne(memory, { $set:
-    { level: level, thinkingTime: thinkingTime,
-        answers: answers, nextUp: nextUp } });
+export function updateMemory(username: string, memory: MemoryFilter, update: MemoryUpdate) {
+  return db.collection(username+"_memories").updateOne(memory, { $set: update });
+}
+
+export async function getPointsByDay(username): Promise<number[]> {
+  let agg = { $group: { _id: {
+    year: {$year: "$endTime"}, month: {$month: "$endTime"}, day: {$dayOfMonth :"$endTime"}
+  }, points: { $sum: "$points" } } };
+  let results = await db.collection(username+"_studies").aggregate([agg]).toArray();
+  return results.map(r => r.points);
 }
 
 export function getTotalPoints(username): Promise<number> {
   let agg = { $group: { _id: null, points: { $sum: "$level" } } };
-  return db.collection(username+"_").aggregate([agg]).toArray()
+  return db.collection(username+"_memories").aggregate([agg]).toArray()
     .then(a => a[0].points)
     .catch(e => 0);
 }
 
-export async function findIdsToReview(username, collection: string,
-    direction: number): Promise<number[]> {
+export async function findIdsToReview(username, set: number, direction: number): Promise<number[]> {
   let query = {
     nextUp: {$lt: new Date(Date.now())},
-    collection: collection,
+    set: set,
     direction: direction
   };
-  let ids = await db.collection(username+"_").find(query)
+  let ids = await db.collection(username+"_memories").find(query)
     .project({_id:0, wordId:1}).toArray();
   return ids.map(i => i.wordId);
 }
 
-export async function findMaxIdInMemory(username, collection: string,
+export async function findMaxIdInMemory(username, set: number,
     direction: number): Promise<number> {
-  let groups = await db.collection(username+"_").aggregate([
-     { $group: { _id: { coll: "$collection", dir: "$direction"}, max: { $max: "$wordId" } } }
+  let groups = await db.collection(username+"_memories").aggregate([
+     { $group: { _id: { set: "$set", dir: "$direction"}, max: { $max: "$wordId" } } }
   ]).toArray();
   let group = groups.filter(g =>
-    g["_id"].coll === collection && g["_id"].dir === direction)[0]
+    g["_id"].set === set && g["_id"].dir === direction)[0]
   return group && group.max ? group.max : 0;
 }
 
 export async function getMemoryByLevel(username) {
   let levels = [];
-  let groups = await db.collection(username+"_").aggregate([
+  let groups = await db.collection(username+"_memories").aggregate([
      { $group: { _id: "$level", count: { $sum: 1 } } }
   ]).toArray();
   groups.forEach(g => levels[g["_id"]-1] = g["count"]);
@@ -81,30 +88,30 @@ export async function getMemoryByLevel(username) {
 }
 
 export async function findReviewByDirection(username) {
-  let groups = await db.collection(username+"_").aggregate([
+  let groups = await db.collection(username+"_memories").aggregate([
     { $match: {nextUp: {$lt: new Date(Date.now())} } },
-    { $group: { _id: { coll: "$collection", dir: "$direction"}, count: { $sum: 1 } } }
+    { $group: { _id: { set: "$set", dir: "$direction"}, count: { $sum: 1 } } }
   ]).toArray();
   return mapToSets(groups);
 }
 
 export async function getMemoryByDirection(username) {
-  let groups = await db.collection(username+"_").aggregate([
-    { $group: { _id: { coll: "$collection", dir: "$direction"}, count: { $sum: 1 } } }
+  let groups = await db.collection(username+"_memories").aggregate([
+    { $group: { _id: { set: "$set", dir: "$direction"}, count: { $sum: 1 } } }
   ]).toArray();
   return mapToSets(groups);
 }
 
 function mapToSets(groupedResults: {count: number}[]) {
-  return SETS.map(s => s.directions.map((d,i) => {
-    let group = groupedResults.filter(g => g["_id"].coll === s.collection && g["_id"].dir === i);
+  return SETS.map((s,j) => s.directions.map((d,i) => {
+    let group = groupedResults.filter(g => g["_id"].set === j && g["_id"].dir === i);
     return group.length > 0 ? group[0].count : 0
   }));
 }
 
 export async function checkLogin(username, password): Promise<{}> {
   let users = db.collection('users');
-  let user: InternalUser = await users.findOne({username: username});
+  let user: DbUser = await users.findOne({username: username});
   if (!user) {
     user = createUser(username, password);
     await users.insert(user);
@@ -117,7 +124,7 @@ export function insert(coll, docs) {
   return db.collection(coll).insertMany(docs).then(r => r.insertedCount);
 }
 
-function createUser(username: string, password: string): InternalUser {
+function createUser(username: string, password: string): DbUser {
   return {
     username: username,
     password: password,
