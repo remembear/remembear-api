@@ -2,6 +2,7 @@ import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import * as db from './db';
 import * as qrs from './queries';
+import { SETS } from './consts';
 
 const PORT = process.env.PORT || 8060;
 
@@ -50,7 +51,16 @@ async function init() {
   //console.log(await db.findMaxIdInMemory('test', 'core10k', 0));
   //console.log(await db.findReviewByDirection('test'));
   //console.log(await db.getMemoryByDirection('test'));
-  await qrs.getReviewQuestions('test', 1, 0);
+  //await qrs.getNewQuestions('test', 1, 1);
+  //console.log(await db.findAlternativeAnswers(SETS[0].collection, SETS[0].directions[1][0], SETS[0].directions[1][1]));
+  //console.log(await db.findAlternativeAnswers(SETS[1].collection, SETS[1].directions[1][0], SETS[1].directions[1][1]));
+  /*console.log(JSON.stringify(await Promise.all(SETS.map((s,i) =>
+    s.directions.map(async (d,j) => {
+      let ans = await db.findAlternativeAnswers(s.collection, d[0], d[1])
+      console.log(ans.length)
+      return ans.length
+    })
+  ))));*/
   /*console.log(await db.toInt("kanji", "stroke count"));
   console.log(await db.toInt('kanji', "Heisig RTK Index"));
   console.log(await db.toInt('kanji', "RTK2 Index"));

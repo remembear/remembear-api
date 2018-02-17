@@ -25,7 +25,11 @@ export async function getNewQuestions(username: string, setIndex: number, direct
   try {
     maxId = await db.findMaxIdInMemory(username, setIndex, direction);
   } catch (e) {}
-  let entries = await db.findTen(set.collection, {[set.idField]: {$gt: maxId}});
+  let dir = set.directions[direction];
+  let entries = await db.findTen(set.collection, {
+    [set.idField]: {$gt: maxId},
+    $where: 'this["'+dir[0]+'"] != this["'+dir[1]+'"]'
+  });
   return toStudy(entries, set, direction, STUDY_TYPE.NEW);
 }
 
@@ -82,24 +86,32 @@ async function updateMemory(username: string, study: Study, studyId: ObjectID, a
   return memory.level;
 }
 
-function toStudy(entries: {}[], set: Set, direction: number, type: STUDY_TYPE): Study {
+async function toStudy(entries: {}[], set: Set, direction: number, type: STUDY_TYPE): Promise<Study> {
+  let dir = set.directions[direction];
+  let altAnswers = await db.find(set.collection,
+    {[dir[0]]: { $in: entries.map(e => e[dir[0]])}},
+    { _id: 0, [dir[0]]: 1, [dir[1]]: 1 });
+  let questions = entries.map(w => toQuestion(w, set, direction, altAnswers));
   return {
     type: type,
     set: SETS.indexOf(set),
     direction: direction,
     startTime: new Date(),
     endTime: new Date(),
-    questions: entries.map(w => toQuestion(w, set, direction)),
+    questions: questions,
     answers: []
   }
 }
 
-function toQuestion(entry: {}, set: Set, dirIndex: number): Question {
+function toQuestion(entry: {}, set: Set, dirIndex: number, altAnswers: {}[]): Question {
   const dir = set.directions[dirIndex];
+  const answers = _.flatten(
+    altAnswers.filter(a => a[dir[0]] === entry[dir[0]])
+    .map(a => toAnswers(a[dir[1]])));
   return {
     wordId: entry[set.idField],
     question: entry[dir[0]],
-    answers: toAnswers(entry[dir[1]]),
+    answers: answers,
     fullAnswers: entry[dir[1]],
     otherFields: dir[2].map(f => entry[f]),
     info: set.info.map(f => entry[f]),

@@ -22,6 +22,10 @@ export function findTen(collection: string, query?: {}) {
   return db.collection(collection).find(query).limit(10).toArray();
 }
 
+export function find(collection: string, query?: {}, projection?: {}) {
+  return db.collection(collection).find(query).project(projection).toArray();
+}
+
 export function insertStudy(username: string, study: DbStudy): Promise<ObjectID> {
   return db.collection(username+"_studies").insertOne(study).then(o => o.insertedId);
 }
@@ -89,7 +93,7 @@ export async function getMemoryByLevel(username) {
 
 export async function findReviewByDirection(username) {
   let groups = await db.collection(username+"_memories").aggregate([
-    { $match: {nextUp: {$lt: new Date(Date.now())} } },
+    { $match: { nextUp: {$lt: new Date(Date.now())} } },
     { $group: { _id: { set: "$set", dir: "$direction"}, count: { $sum: 1 } } }
   ]).toArray();
   return mapToSets(groups);
