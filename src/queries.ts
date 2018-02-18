@@ -122,7 +122,9 @@ function toQuestion(entry: {}, set: Set, dirIndex: number, altAnswers: {}[]): Qu
 function toAnswers(entry: string) {
   return entry.split(',')
     .map(e => e.replace(/ *\([^)]*\) */g, "")) //remove parentheses
-    .map(e => _.trim(_.toLower(e))); //lower case and remove whitespace
+    .map(e => e.replace(/[&-.'* 。　]/g, "")) //remove special chars
+    .map(e => _.trim(_.toLower(e))) //lower case and remove whitespace
+    .map(e => e.replace(/s$/, '')); //remove trailing -s for plural
 }
 
 function toAudioPath(audio: string) {

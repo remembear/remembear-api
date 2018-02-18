@@ -51,7 +51,7 @@ export async function getPointsByDay(username): Promise<number[]> {
     year: {$year: "$endTime"}, month: {$month: "$endTime"}, day: {$dayOfMonth :"$endTime"}
   }, points: { $sum: "$points" } } };
   let results = await db.collection(username+"_studies").aggregate([agg]).toArray();
-  return results.map(r => r.points);
+  return results.map(r => r.points).reverse();
 }
 
 export function getTotalPoints(username): Promise<number> {
