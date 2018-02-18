@@ -47,11 +47,14 @@ export function updateMemory(username: string, memory: MemoryFilter, update: Mem
 }
 
 export async function getPointsByDay(username): Promise<number[]> {
-  let agg = { $group: { _id: {
-    year: {$year: "$endTime"}, month: {$month: "$endTime"}, day: {$dayOfMonth :"$endTime"}
-  }, points: { $sum: "$points" } } };
-  let results = await db.collection(username+"_studies").aggregate([agg]).toArray();
-  return results.map(r => r.points).reverse();
+  let agg = [
+    { $group: {
+      _id: { year: {$year: "$endTime"}, month: {$month: "$endTime"}, day: {$dayOfMonth :"$endTime"} },
+      points: { $sum: "$points" } } },
+    { $sort: { _id: 1 } }
+  ];
+  let results = await db.collection(username+"_studies").aggregate(agg).toArray();
+  return results.map(r => r.points);
 }
 
 export function getTotalPoints(username): Promise<number> {

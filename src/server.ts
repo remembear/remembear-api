@@ -51,7 +51,7 @@ async function init() {
   //console.log(await db.findMaxIdInMemory('test', 'core10k', 0));
   //console.log(await db.findReviewByDirection('test'));
   //console.log(await db.getMemoryByDirection('test'));
-  //await qrs.getNewQuestions('test', 1, 1);
+  //console.log(await db.getPointsByDay('furotaru'));
   //console.log(await db.findAlternativeAnswers(SETS[0].collection, SETS[0].directions[1][0], SETS[0].directions[1][1]));
   //console.log(await db.findAlternativeAnswers(SETS[1].collection, SETS[1].directions[1][0], SETS[1].directions[1][1]));
   /*console.log(JSON.stringify(await Promise.all(SETS.map((s,i) =>
