@@ -3,6 +3,7 @@ import * as bodyParser from 'body-parser';
 import * as db from './db';
 import * as qrs from './queries';
 import { SETS } from './consts';
+import * as sim from './similarity';
 
 const PORT = process.env.PORT || 8060;
 
@@ -48,6 +49,8 @@ async function init() {
   app.listen(PORT, () => {
     console.log('remembear server live on ' + PORT);
   });
+
+  //sim.findSimilar('痛');
   //console.log(await db.findMaxIdInMemory('test', 'core10k', 0));
   //console.log(await db.findReviewByDirection('test'));
   //console.log(await db.getMemoryByDirection('test'));

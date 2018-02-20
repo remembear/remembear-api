@@ -1,6 +1,8 @@
 node_modules/
-data/
 lib/
 src/config.js
+audio-sentences/
+audio-words/
+*.xlsx
 
 package-lock.json

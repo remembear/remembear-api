@@ -133,7 +133,7 @@ function toAudioPath(audio: string) {
 
 function toNewMemory(filter: MemoryFilter, studyId: ObjectID, attempts: Attempt[]): Memory {
   let previouslyKnown = attempts.length == 1;
-  let newLevel = previouslyKnown ? 4 : 1;
+  let newLevel = previouslyKnown ? 5 : 1;
   return {
     set: filter.set,
     direction: filter.direction,
@@ -154,5 +154,6 @@ function calculateNextUp(level: number): Date {
 function toDays(level: number) {
   if (level == 0) return 0;
   if (level == 1) return 1;
-  return LEVEL_FACTOR * Math.pow(2, level-2);
+  if (level == 2) return 2;
+  return LEVEL_FACTOR * Math.pow(2, level-3);
 }
