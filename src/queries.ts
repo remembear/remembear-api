@@ -3,33 +3,38 @@ import { ObjectID } from 'mongodb';
 import * as db from './db';
 import { Memory, MemoryFilter, MemoryUpdate, DbStudy, DbAnswer } from './db-types';
 import { User, Set, Question, Study, UserStatus, Answer, Attempt } from './types';
-import { AUDIO_LOCATION, SETS, STUDY_TYPE } from './consts';
+import { AUDIO_LOCATION, SETS, STUDY_TYPE, VOC_KNA } from './consts';
 
 //words come back after about LEVEL_FACTOR*2^(level-1) days, e.g. 6: [(1),6,12,24,48,..]
-const LEVEL_FACTOR = 6;
+const LEVEL_FACTOR = 7;
 
 export async function getUserStatus(username: string, latestPoints?: number): Promise<UserStatus> {
-  return {
+  let status = {
     wordsKnownByLevel: await db.getMemoryByLevel(username),
     wordsKnownByDirection: await db.getMemoryByDirection(username),
     wordsToReviewByDirection: await db.findReviewByDirection(username),
     totalPoints: await db.getTotalPoints(username),
-    pointsByDay: await db.getPointsByDay(username),
+    pointsPerDay: await db.getPointsPerDay(username),
+    durationPerDay: await db.getDurationPerDay(username),
+    studiesPerDay: await db.getStudiesPerDay(username),
+    thinkingPerDay: await db.getThinktimePerDay(username),
     latestPoints: latestPoints ? latestPoints : 0
   }
+  return status
 }
 
 export async function getNewQuestions(username: string, setIndex: number, direction: number): Promise<Study> {
   let set = SETS[setIndex];
-  let maxId = 0;
+  let known = [];
   try {
-    maxId = await db.findMaxIdInMemory(username, setIndex, direction);
+    known = await db.findIdsInMemory(username, setIndex, direction)
+    known = known.map(k => k.wordId);
   } catch (e) {}
   let dir = set.directions[direction];
   let entries = await db.findTen(set.collection, {
-    [set.idField]: {$gt: maxId},
+    [set.idField]: {$nin: known, $ne: NaN},
     $where: 'this["'+dir[0]+'"] != this["'+dir[1]+'"]'
-  });
+  }, SETS[setIndex].idField);
   return toStudy(entries, set, direction, STUDY_TYPE.NEW);
 }
 
@@ -88,9 +93,18 @@ async function updateMemory(username: string, study: Study, studyId: ObjectID, a
 
 async function toStudy(entries: {}[], set: Set, direction: number, type: STUDY_TYPE): Promise<Study> {
   let dir = set.directions[direction];
-  let altAnswers = await db.find(set.collection,
-    {[dir[0]]: { $in: entries.map(e => e[dir[0]])}},
-    { _id: 0, [dir[0]]: 1, [dir[1]]: 1 });
+  let altAnswers;
+  if (SETS.indexOf(set) == 1 && direction == 2) { //alt answers for audio direction
+    altAnswers = await db.find(set.collection,
+      {[VOC_KNA]: { $in: entries.map(e => e[VOC_KNA])}},
+      { _id: 0, [VOC_KNA]: 1, [dir[1]]: 1 });
+    altAnswers.map(a =>
+      a[dir[0]] = entries.filter(e => a[VOC_KNA] === e[VOC_KNA])[0][dir[0]]);
+  } else {
+    altAnswers = await db.find(set.collection,
+     {[dir[0]]: { $in: entries.map(e => e[dir[0]])}},
+     { _id: 0, [dir[0]]: 1, [dir[1]]: 1 });
+  }
   let questions = entries.map(w => toQuestion(w, set, direction, altAnswers));
   return {
     type: type,
@@ -120,11 +134,14 @@ function toQuestion(entry: {}, set: Set, dirIndex: number, altAnswers: {}[]): Qu
 }
 
 function toAnswers(entry: string) {
-  return entry.split(',')
-    .map(e => e.replace(/ *\([^)]*\) */g, "")) //remove parentheses
-    .map(e => e.replace(/[&-.'* 。　]/g, "")) //remove special chars
+  return entry.replace(/ *\([^)]*\) */g, "") //remove parentheses
+    .replace(/ *\[[^\]]*]/g, "") //remove square brackets
+    .replace(/;/g, ",") //semicolons to commas
+    .split(',') //split alternatives
+    .map(e => e.replace(/[\/&-.'* 。　]/g, "")) //remove special chars
     .map(e => _.trim(_.toLower(e))) //lower case and remove whitespace
-    .map(e => e.replace(/s$/, '')); //remove trailing -s for plural
+    .map(e => e.replace(/s$/, '')) //remove trailing -s for plural
+    .map(e => e.replace(/th$/, '')) //remove trailing -th
 }
 
 function toAudioPath(audio: string) {

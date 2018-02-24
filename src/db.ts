@@ -18,12 +18,17 @@ export function findOne(collection: string, filter: {}) {
   return db.collection(collection).findOne(filter);
 }
 
-export function findTen(collection: string, query?: {}) {
-  return db.collection(collection).find(query).limit(10).toArray();
+export function findTen(collection: string, query?: {}, sortField?: string) {
+  let sort = sortField ? {[sortField]: 1} : {};
+  return db.collection(collection).find(query).sort(sort).limit(10).toArray();
 }
 
 export function find(collection: string, query?: {}, projection?: {}) {
   return db.collection(collection).find(query).project(projection).toArray();
+}
+
+export function update(coll: string, filter: {}, update: {}) {
+  db.collection(coll).update(filter, update);
 }
 
 export function insertStudy(username: string, study: DbStudy): Promise<ObjectID> {
@@ -46,7 +51,52 @@ export function updateMemory(username: string, memory: MemoryFilter, update: Mem
   return db.collection(username+"_memories").updateOne(memory, { $set: update });
 }
 
-export async function getPointsByDay(username): Promise<number[]> {
+export async function getStudiesPerDay(username): Promise<number[]> {
+  let agg = [
+    { $group: {
+      _id: { year: {$year: "$endTime"}, month: {$month: "$endTime"}, day: {$dayOfMonth :"$endTime"} },
+      count: { $sum: 1 } } },
+    { $sort: { _id: 1 } }
+  ];
+  let results = await db.collection(username+"_studies").aggregate(agg).toArray();
+  return results.map(r => r.count);
+}
+
+export async function getDurationPerDay(username): Promise<number[]> {
+  let agg = [
+    { $group: {
+      _id: { year: {$year: "$endTime"}, month: {$month: "$endTime"}, day: {$dayOfMonth :"$endTime"} },
+      duration: { $sum: { $subtract: [ "$endTime", "$startTime" ] } } } },
+    { $sort: { _id: 1 } }
+  ];
+  let results = await db.collection(username+"_studies").aggregate(agg).toArray();
+  return results.map(r => r.duration / 1000 / 60);
+}
+
+export async function getThinktimePerDay(username: string): Promise<number[]> {
+  let agg = [
+    { $lookup: {
+        from: username+"_memories",
+        localField: "_id",
+        foreignField: "answers.studyId",
+        as: "answers"
+    } },
+    { $unwind: "$answers" },
+    { $project: { "endTime": 1 ,
+      duration: { $arrayElemAt: [ { $arrayElemAt: [ "$answers.answers.attempts.duration", 0 ] }, 0] }
+    } },
+    { $group: {
+      _id: { year: {$year: "$endTime"}, month: {$month: "$endTime"}, day: {$dayOfMonth :"$endTime"} },
+      duration: { $sum: "$duration" }
+    } },
+    { $sort: { _id: 1 } }
+  ];
+  let results = await db.collection(username+"_studies").aggregate(agg).toArray();
+  //console.log(JSON.stringify(results[0], null, 2))
+  return results.map(r => r.duration / 1000 / 60);
+}
+
+export async function getPointsPerDay(username): Promise<number[]> {
   let agg = [
     { $group: {
       _id: { year: {$year: "$endTime"}, month: {$month: "$endTime"}, day: {$dayOfMonth :"$endTime"} },
@@ -83,6 +133,12 @@ export async function findMaxIdInMemory(username, set: number,
   let group = groups.filter(g =>
     g["_id"].set === set && g["_id"].dir === direction)[0]
   return group && group.max ? group.max : 0;
+}
+
+export async function findIdsInMemory(username: string, set: number, direction: number): Promise<number[]> {
+  return await db.collection(username+"_memories")
+    .find({ set: set, direction: direction })
+    .project({ _id: 0, wordId: 1 }).toArray();
 }
 
 export async function getMemoryByLevel(username) {

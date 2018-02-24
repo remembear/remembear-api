@@ -15,6 +15,20 @@ async function populate(file, coll) {
   console.log(inserted)
 }
 
+async function fixKanjiEnglish() {
+  const HK = "Heisig Keyword";
+  const EM = "English Meaning";
+  await db.connect();
+  let allKanji = await db.find("kanji", {}, {[HK]: 1, [EM]: 1});
+  allKanji.forEach(k => {
+    if (k[HK] && k[EM].indexOf(k[HK]) < 0) {
+      let combined = k[HK]+', '+k[EM];
+      db.update('kanji', {_id: k._id}, {$set: {[EM]: combined}});
+      console.log(combined)
+    }
+  });
+}
+
 function csvToJson(file) {
   return new Promise((resolve, reject) =>
     fs.readFile(file, 'utf8', (err, data) => {
