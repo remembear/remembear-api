@@ -25,28 +25,25 @@ export const SETS: Set[] = [{
   name: "Kanji",
   collection: "kanji",
   idField: "2k1KO Index",
-  directionNames: [
-    "Reading",
-    "Writing"
-  ],
   directions: [
-    [KAN_KAN, KAN_ENG, ["stroke count", "Kana", "Primitive look-up data."]],
-    [KAN_ENG, KAN_KAN, ["stroke count", "Kana", "Primitive look-up data."]]
+    {
+      name: "Reading", question: KAN_KAN, answer: KAN_ENG,
+      extras: ["stroke count", "Kana", "Primitive look-up data."]
+    },
+    {
+      name: "Writing", numOptions: 25, question: KAN_ENG, answer: KAN_KAN,
+      extras: ["stroke count", "Kana", "Primitive look-up data."]
+    }
   ],
   info: []
 }, {
   name: "Vocab",
   collection: "core10k",
   idField: "2k1-Kanken Opt Sort",
-  directionNames: [
-    "Writing",
-    "Reading",
-    "Listening"
-  ],
   directions: [
-    [VOC_ENG, VOC_JAP, [VOC_KNA]],
-    [VOC_JAP, VOC_KNA, [VOC_ENG]],
-    [VOC_AUD, VOC_ENG, [VOC_JAP]]
+    { name: "Writing", question: VOC_ENG, answer: VOC_JAP, extras: [VOC_KNA] },
+    { name: "Reading", question: VOC_JAP, answer: VOC_KNA, extras: [VOC_ENG] },
+    { name: "Listening", question: VOC_AUD, answer: VOC_ENG, extras: [VOC_JAP] }
   ],
   info: ["Part of speech", "Word-type", "Vocab-RTK"],
   audio: VOC_AUD
@@ -54,13 +51,19 @@ export const SETS: Set[] = [{
   name: "Sentences",
   collection: "core10k",
   idField: "2k1-Kanken Opt Sort",
-  directionNames: [
-    "Listening",
-    "Reading"
-  ],
   directions: [
-    [SEN_AUD, SEN_JAP, [SEN_ENG]],
-    [SEN_JAP, SEN_ENG, [SEN_JAP]]
+    {
+      name: "Listening", numOptions: 10, question: SEN_AUD, answer: SEN_JAP,
+      extras: [SEN_ENG]
+    },
+    {
+      name: "Reading", numOptions: 10, question: SEN_JAP, answer: SEN_ENG,
+      extras: [SEN_JAP]
+    },
+    {
+      name: "Writing", numOptions: 10, question: SEN_ENG, answer: SEN_JAP,
+      extras: []
+    }
   ],
   info: [],
   audio: SEN_AUD

@@ -2,10 +2,17 @@ export interface Set {
   name: string,
   collection: string,
   idField: string,
-  directionNames: string[],
-  directions: [string, string, string[]][], //question, answer, fields to show after
+  directions: Direction[],
   info: string[], //fields to show during question
   audio?: string
+}
+
+export interface Direction {
+  name: string,
+  question: string,
+  answer: string,
+  extras: string[],
+  numOptions?: number
 }
 
 export interface User {
@@ -43,6 +50,7 @@ export interface Question {
   fullAnswers: string,
   otherFields: string[],
   info: string[],
+  options?: string[],
   audio?: string
 }
 

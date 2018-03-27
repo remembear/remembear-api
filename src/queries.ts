@@ -2,8 +2,9 @@ import * as _ from 'lodash';
 import { ObjectID } from 'mongodb';
 import * as db from './db';
 import { Memory, MemoryFilter, MemoryUpdate, DbStudy, DbAnswer } from './db-types';
-import { User, Set, Question, Study, UserStatus, Answer, Attempt } from './types';
+import { User, Set, Direction, Question, Study, UserStatus, Answer, Attempt } from './types';
 import { AUDIO_LOCATION, SETS, STUDY_TYPE, VOC_KNA } from './consts';
+import { createAnswers } from './util';
 
 //words come back after about LEVEL_FACTOR*2^(level-1) days, e.g. 6: [(1),6,12,24,48,..]
 const LEVEL_FACTOR = 7;
@@ -33,7 +34,7 @@ export async function getNewQuestions(username: string, setIndex: number, direct
   let dir = set.directions[direction];
   let entries = await db.findTen(set.collection, {
     [set.idField]: {$nin: known, $ne: NaN},
-    $where: 'this["'+dir[0]+'"] != this["'+dir[1]+'"]'
+    $where: 'this["'+dir.question+'"] != this["'+dir.answer+'"]'
   }, SETS[setIndex].idField);
   return toStudy(entries, set, direction, STUDY_TYPE.NEW);
 }
@@ -91,25 +92,14 @@ async function updateMemory(username: string, study: Study, studyId: ObjectID, a
   return memory.level;
 }
 
-async function toStudy(entries: {}[], set: Set, direction: number, type: STUDY_TYPE): Promise<Study> {
-  let dir = set.directions[direction];
-  let altAnswers;
-  if (SETS.indexOf(set) == 1 && direction == 2) { //alt answers for audio direction
-    altAnswers = await db.find(set.collection,
-      {[VOC_KNA]: { $in: entries.map(e => e[VOC_KNA])}},
-      { _id: 0, [VOC_KNA]: 1, [dir[1]]: 1 });
-    altAnswers.map(a =>
-      a[dir[0]] = entries.filter(e => a[VOC_KNA] === e[VOC_KNA])[0][dir[0]]);
-  } else {
-    altAnswers = await db.find(set.collection,
-     {[dir[0]]: { $in: entries.map(e => e[dir[0]])}},
-     { _id: 0, [dir[0]]: 1, [dir[1]]: 1 });
-  }
-  let questions = entries.map(w => toQuestion(w, set, direction, altAnswers));
+async function toStudy(entries: {}[], set: Set, dirIndex: number, type: STUDY_TYPE): Promise<Study> {
+  let altAnswers = await getAltAnswers(entries, set, dirIndex);
+  //let options = this
+  let questions = entries.map(w => toQuestion(w, set, dirIndex, altAnswers));
   return {
     type: type,
     set: SETS.indexOf(set),
-    direction: direction,
+    direction: dirIndex,
     startTime: new Date(),
     endTime: new Date(),
     questions: questions,
@@ -117,31 +107,39 @@ async function toStudy(entries: {}[], set: Set, direction: number, type: STUDY_T
   }
 }
 
+//async function getOptions(entries: {}[])
+
+async function getAltAnswers(entries: {}[], set: Set, dirIndex: number) {
+  let dir = set.directions[dirIndex];
+  if (SETS.indexOf(set) == 1 && dirIndex == 2) { //alt answers for audio direction
+    let altAnswers = await db.find(set.collection,
+      {[VOC_KNA]: { $in: entries.map(e => _.trim(e[VOC_KNA]))}},
+      { _id: 0, [VOC_KNA]: 1, [dir.answer]: 1 });
+    altAnswers.forEach(a =>
+      a[dir.question] = entries.filter(e => a[VOC_KNA] === e[VOC_KNA]).map(e => e[dir.question]));
+    return altAnswers;
+  }
+  return await db.find(set.collection,
+    {[dir.question]: { $in: entries.map(e => e[dir.question])}},
+    { _id: 0, [dir.question]: 1, [dir.answer]: 1 });
+}
+
 function toQuestion(entry: {}, set: Set, dirIndex: number, altAnswers: {}[]): Question {
   const dir = set.directions[dirIndex];
   const answers = _.flatten(
-    altAnswers.filter(a => a[dir[0]] === entry[dir[0]])
-    .map(a => toAnswers(a[dir[1]])));
+    altAnswers.filter(a => a[dir.question] === entry[dir.question]
+      || (a[dir.question].length && a[dir.question].indexOf(entry[dir.question]) >= 0))
+    .map(a => createAnswers(a[dir.answer])));
   return {
     wordId: entry[set.idField],
-    question: entry[dir[0]],
+    question: entry[dir.question],
+    options: dir.numOptions ? [] : undefined,
     answers: answers,
-    fullAnswers: entry[dir[1]],
-    otherFields: dir[2].map(f => entry[f]),
+    fullAnswers: entry[dir.answer],
+    otherFields: dir.extras.map(f => entry[f]),
     info: set.info.map(f => entry[f]),
     audio: set.audio ? toAudioPath(entry[set.audio]) : undefined
   }
-}
-
-function toAnswers(entry: string) {
-  return entry.replace(/ *\([^)]*\) */g, "") //remove parentheses
-    .replace(/ *\[[^\]]*]/g, "") //remove square brackets
-    .replace(/;/g, ",") //semicolons to commas
-    .split(',') //split alternatives
-    .map(e => e.replace(/[\/&-.'* 。　]/g, "")) //remove special chars
-    .map(e => _.trim(_.toLower(e))) //lower case and remove whitespace
-    .map(e => e.replace(/s$/, '')) //remove trailing -s for plural
-    .map(e => e.replace(/th$/, '')) //remove trailing -th
 }
 
 function toAudioPath(audio: string) {

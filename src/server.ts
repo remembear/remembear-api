@@ -50,7 +50,9 @@ async function init() {
     console.log('remembear server live on ' + PORT);
   });
 
-  //sim.findSimilar('痛');
+  //console.log(await sim.findSimilarKanji('木'));
+  //console.log(await sim.findSimilarKanji('念'));
+  //await sim.updateAllSimilarKanji();
   //await qrs.getNewQuestions('test', 1, 2)
   //console.log(await db.findMaxIdInMemory('test', 'core10k', 0));
   //console.log(await db.findReviewByDirection('test'));
