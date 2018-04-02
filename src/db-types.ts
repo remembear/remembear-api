@@ -39,5 +39,13 @@ export interface Memory {
 
 export interface DbAnswer {
   studyId: ObjectID,
-  attempts: Attempt[]
+  attempts: Attempt[],
+  newLevel: number
+}
+
+export interface Similars {
+  originalId: ObjectID,
+  original: string,
+  similars: string[],
+  degrees: number[]
 }

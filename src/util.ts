@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 
-const words = ['the','and','with','at','to','for','a'];
-const endings = ['th','te','ed','ly','ty','al','ing','ment','ness','tion','ous','e','s'];
+const words = ['the','and','with','at','to','for','a','up'];
+const endings = ['th','te','ed','ly','ty','al','ing','ment','ness','icity','tion','ous','t','e','s'];
 
 export function createAnswers(entry: string): string[] {
   return entry.replace(/ *\([^)]*\) */g, "") //remove parentheses
@@ -24,9 +24,10 @@ function normalizeAnswer(answer: string): string {
   return removeIgnoredEndings(answer); //remove ignored endings
 }
 
-function normalizeSentenceAnswer(answer: string) {
-  answer = answer.replace(/[ですま。　]/g, ""); //remove special chars
-  //TODO
+export function normalizeSentenceAnswer(answer: string) {
+  //polite, verb endings, particles
+  answer = answer.replace(/[ですま、くぐぶつむうるぬ。よねか　]/g, "");
+  return answer;
 }
 
 function removeIgnoredWords(s: string): string {

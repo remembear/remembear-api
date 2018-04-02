@@ -5,6 +5,7 @@ import { Memory, MemoryFilter, MemoryUpdate, DbStudy, DbAnswer } from './db-type
 import { User, Set, Direction, Question, Study, UserStatus, Answer, Attempt } from './types';
 import { AUDIO_LOCATION, SETS, STUDY_TYPE, VOC_KNA } from './consts';
 import { createAnswers } from './util';
+import { findSimilarKanjis } from './similarity';
 
 //words come back after about LEVEL_FACTOR*2^(level-1) days, e.g. 6: [(1),6,12,24,48,..]
 const LEVEL_FACTOR = 7;
@@ -77,8 +78,8 @@ async function updateMemory(username: string, study: Study, studyId: ObjectID, a
   let filter = { set: study.set, wordId: answer.wordId, direction: study.direction };
   let mem = await db.findMemory(username, filter);
   if (mem) {
-    let newLevel = answer.attempts.length === 1 ? mem.level+1 : 1;
-    let dbAnswer = {studyId: studyId, attempts: answer.attempts};
+    let newLevel = answer.attempts.length === 1 ? mem.level+1 : Math.max(mem.level-2, 1);
+    let dbAnswer = {studyId: studyId, attempts: answer.attempts, newLevel: newLevel};
     let memoryUpdate = {
       level: newLevel,
       answers: mem.answers.concat(dbAnswer),
@@ -94,8 +95,17 @@ async function updateMemory(username: string, study: Study, studyId: ObjectID, a
 
 async function toStudy(entries: {}[], set: Set, dirIndex: number, type: STUDY_TYPE): Promise<Study> {
   let altAnswers = await getAltAnswers(entries, set, dirIndex);
-  //let options = this
   let questions = entries.map(w => toQuestion(w, set, dirIndex, altAnswers));
+  let numOptions = set.directions[dirIndex].numOptions;
+  if (numOptions) {
+    let options = await findSimilarKanjis(questions.map(q => q.answers[0]));
+    options.forEach(o => o.similars = o.similars.slice(0, numOptions-1));//_.sampleSize(o.similars, numOptions));
+    questions.forEach(q => {
+      let opts = options.filter(o => o.original === q.answers[0])[0]
+      opts = opts ? opts : options[0]; //in case no similars are found...
+      q.options = _.shuffle([q.answers[0]].concat(opts.similars));
+    });
+  }
   return {
     type: type,
     set: SETS.indexOf(set),
@@ -107,8 +117,6 @@ async function toStudy(entries: {}[], set: Set, dirIndex: number, type: STUDY_TY
   }
 }
 
-//async function getOptions(entries: {}[])
-
 async function getAltAnswers(entries: {}[], set: Set, dirIndex: number) {
   let dir = set.directions[dirIndex];
   if (SETS.indexOf(set) == 1 && dirIndex == 2) { //alt answers for audio direction
@@ -119,17 +127,20 @@ async function getAltAnswers(entries: {}[], set: Set, dirIndex: number) {
       a[dir.question] = entries.filter(e => a[VOC_KNA] === e[VOC_KNA]).map(e => e[dir.question]));
     return altAnswers;
   }
-  return await db.find(set.collection,
-    {[dir.question]: { $in: entries.map(e => e[dir.question])}},
+  let qs = entries.map(e => e[dir.question]);
+  let as = entries.map(e => e[dir.answer]);
+  let altAnswers = await db.find(set.collection,
+    {[dir.question]: { $in: qs}},
     { _id: 0, [dir.question]: 1, [dir.answer]: 1 });
+  return altAnswers.filter(a => as.indexOf(a[dir.answer]) < 0);
 }
 
 function toQuestion(entry: {}, set: Set, dirIndex: number, altAnswers: {}[]): Question {
   const dir = set.directions[dirIndex];
-  const answers = _.flatten(
+  const answers = _.flatten([entry[dir.answer]].concat(
     altAnswers.filter(a => a[dir.question] === entry[dir.question]
       || (a[dir.question].length && a[dir.question].indexOf(entry[dir.question]) >= 0))
-    .map(a => createAnswers(a[dir.answer])));
+    .map(a => createAnswers(a[dir.answer]))));
   return {
     wordId: entry[set.idField],
     question: entry[dir.question],
@@ -153,7 +164,7 @@ function toNewMemory(filter: MemoryFilter, studyId: ObjectID, attempts: Attempt[
     set: filter.set,
     direction: filter.direction,
     wordId: filter.wordId,
-    answers: [{studyId: studyId, attempts: attempts}],
+    answers: [{studyId: studyId, attempts: attempts, newLevel: newLevel}],
     level: newLevel,
     nextUp: calculateNextUp(newLevel)
   };

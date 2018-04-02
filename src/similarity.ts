@@ -1,20 +1,27 @@
 import * as _ from 'lodash';
 import * as db from './db';
+import { Similars } from './db-types';
 
 const KANJI = "Kanji";
-const RADICALS = "Primitive look-up data.";
+const RADICALS = "Japan Primitive Look-up"//"Primitive look-up data.";
 const STROKES = "stroke count";
+const KANJI_SIMS = "kanji_sims";
 
-export async function updateAllSimilarKanji() {
+export async function createSimilarKanjiCollection() {
   let allKanji = await getAllKanjiWithRadicals();
   console.log("all kanji found")
   let similars = allKanji.map(k => getSimilarKanji(k, allKanji, 50));
   console.log("sims calculated")
-  await db.insert("kanji_sims", similars);
+  await db.insert(KANJI_SIMS, similars);
   console.log("done!")
 }
 
-export async function findSimilarKanji(kanji: string) {
+export async function findSimilarKanjis(kanjis: string[]): Promise<Similars[]> {
+  let similars = await db.find(KANJI_SIMS, {original: {$in: kanjis}}, {_id: 0, original: 1, similars: 1});
+  return similars;
+}
+
+export async function testSimilarKanji(kanji: string) {
   let allKanji = await getAllKanjiWithRadicals();
   let queryKanji = allKanji.filter(k => k.k === kanji)[0];
   return getSimilarKanji(queryKanji, allKanji, 10);
@@ -28,16 +35,16 @@ async function getAllKanjiWithRadicals() {
   return allKanji.filter(k => k.r.length > 0);
 }
 
-function getSimilarKanji(kanji, allKanji: any[], count: number) {
+function getSimilarKanji(kanji, allKanji: any[], count: number): Similars {
   allKanji = allKanji.filter(k => k.k !== kanji.k);
   allKanji.forEach(k => k.v = getKanjiSimilarity(k, kanji));
   allKanji.sort((a,b) => b.v - a.v);
   let similars = allKanji.slice(0, count);
   return {
-    "original_id": kanji.i,
-    "original": kanji.k,
-    "similars": similars.map(k => k.k),
-    "degrees": similars.map(k => k.v)
+    originalId: kanji.i,
+    original: kanji.k,
+    similars: similars.map(k => k.k),
+    degrees: similars.map(k => k.v)
   };
 }
 

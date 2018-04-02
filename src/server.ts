@@ -50,10 +50,12 @@ async function init() {
     console.log('remembear server live on ' + PORT);
   });
 
-  //console.log(await sim.findSimilarKanji('木'));
-  //console.log(await sim.findSimilarKanji('念'));
-  //await sim.updateAllSimilarKanji();
-  //await qrs.getNewQuestions('test', 1, 2)
+  /*console.log(await sim.testSimilarKanji('忙'));
+  console.log(await sim.testSimilarKanji('悪'));
+  console.log(await sim.testSimilarKanji('倍'));
+  console.log(await sim.testSimilarKanji('特'));*/
+  //await sim.createSimilarKanjiCollection();
+  //await qrs.getNewQuestions('test', 0, 1)
   //console.log(await db.findMaxIdInMemory('test', 'core10k', 0));
   //console.log(await db.findReviewByDirection('test'));
   //console.log(await db.getMemoryByDirection('test'));
