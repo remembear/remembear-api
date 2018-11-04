@@ -1,3 +1,4 @@
+import * as _ from 'lodash';
 import { MongoClient, Db, ObjectID } from 'mongodb';
 import { URL } from './config';
 import { DbUser, Memory, MemoryFilter, MemoryUpdate,　DbStudy, DbAnswer } from './db-types';
@@ -27,16 +28,20 @@ export function find(collection: string, query?: {}, projection?: {}) {
   return db.collection(collection).find(query).project(projection).toArray();
 }
 
-export function update(coll: string, filter: {}, update: {}) {
-  db.collection(coll).update(filter, update);
+export function updateMany(coll: string, filter: {}, update: {}) {
+  db.collection(coll).updateMany(filter, update);
 }
 
 export function insertStudy(username: string, study: DbStudy): Promise<ObjectID> {
   return db.collection(username+"_studies").insertOne(study).then(o => o.insertedId);
 }
 
-export function updateStudy(username: string, study: DbStudy, points: number) {
-  return db.collection(username+"_studies").updateOne(study, { $set: {points: points} });
+export function updateStudyPoints(username: string, studyId: ObjectID, points: number) {
+  return db.collection(username+"_studies").updateOne({_id: studyId}, { $set: {points: points} });
+}
+
+export function updateStudyThinkingTime(username: string, studyId: ObjectID, duration: number) {
+  return db.collection(username+"_studies").updateOne({_id: studyId}, { $set: {thinkingTime: duration} });
 }
 
 export function findMemory(username: string, filter: MemoryFilter): Promise<Memory> {
@@ -51,6 +56,20 @@ export function updateMemory(username: string, memory: MemoryFilter, update: Mem
   return db.collection(username+"_memories").updateOne(memory, { $set: update });
 }
 
+export async function updateAllStudyThinkingTimes(username: string): Promise<any> {
+  let studies = await find(username+"_studies")
+  let answers = await find(username+"_memories", {}, {answers: 1});
+  answers = _.flatten(answers.map(a => a.answers));
+  return Promise.all(studies.map(async s => {
+    let attempts = _.flatten(
+      answers.filter(a => a.studyId.toString() === s._id.toString())
+        .map(a => a.attempts));
+    let thinkingTime = _.sum(attempts.map(a => a.duration));
+    return db.collection(username+"_studies")
+      .updateOne({_id: s._id}, { $set: {thinkingTime: thinkingTime} });
+  }));
+}
+
 export async function getStudiesPerDay(username): Promise<number[]> {
   let agg = [
     { $group: {
@@ -58,8 +77,20 @@ export async function getStudiesPerDay(username): Promise<number[]> {
       count: { $sum: 1 } } },
     { $sort: { _id: 1 } }
   ];
-  let results = await db.collection(username+"_studies").aggregate(agg).toArray();
-  return results.map(r => r.count);
+  const results = await aggregateStudiesWithGapDays(username, agg);
+  return results.map(r => r ? r.count : 0);
+}
+
+export async function getNewPerDay(username): Promise<number[]> {
+  let agg = [
+    { $match: { type: "new" } },
+    { $group: {
+      _id: { year: {$year: "$endTime"}, month: {$month: "$endTime"}, day: {$dayOfMonth :"$endTime"} },
+      count: { $sum: 1 } } },
+    { $sort: { _id: 1 } }
+  ];
+  const results = await aggregateStudiesWithGapDays(username, agg);
+  return results.map(r => r ? r.count : 0);
 }
 
 export async function getDurationPerDay(username): Promise<number[]> {
@@ -69,31 +100,19 @@ export async function getDurationPerDay(username): Promise<number[]> {
       duration: { $sum: { $subtract: [ "$endTime", "$startTime" ] } } } },
     { $sort: { _id: 1 } }
   ];
-  let results = await db.collection(username+"_studies").aggregate(agg).toArray();
-  return results.map(r => r.duration / 1000 / 60);
+  const results = await aggregateStudiesWithGapDays(username, agg);
+  return results.map(r => r ? r.duration / 1000 / 60 : 0);
 }
 
-export async function getThinktimePerDay(username: string): Promise<number[]> {
+export async function getThinkingTimePerDay(username: string): Promise<number[]> {
   let agg = [
-    { $lookup: {
-        from: username+"_memories",
-        localField: "_id",
-        foreignField: "answers.studyId",
-        as: "answers"
-    } },
-    { $unwind: "$answers" },
-    { $project: { "endTime": 1 ,
-      duration: { $arrayElemAt: [ { $arrayElemAt: [ "$answers.answers.attempts.duration", 0 ] }, 0] }
-    } },
     { $group: {
       _id: { year: {$year: "$endTime"}, month: {$month: "$endTime"}, day: {$dayOfMonth :"$endTime"} },
-      duration: { $sum: "$duration" }
-    } },
+      thinkingTime: { $sum: "$thinkingTime" } } },
     { $sort: { _id: 1 } }
   ];
-  let results = await db.collection(username+"_studies").aggregate(agg).toArray();
-  //console.log(JSON.stringify(results[0], null, 2))
-  return results.map(r => r.duration / 1000 / 60);
+  const results = await aggregateStudiesWithGapDays(username, agg);
+  return results.map(r => r ? r.thinkingTime / 1000 / 60 : 0);
 }
 
 export async function getPointsPerDay(username): Promise<number[]> {
@@ -103,8 +122,15 @@ export async function getPointsPerDay(username): Promise<number[]> {
       points: { $sum: "$points" } } },
     { $sort: { _id: 1 } }
   ];
-  let results = await db.collection(username+"_studies").aggregate(agg).toArray();
-  return results.map(r => r.points);
+  const results = await aggregateStudiesWithGapDays(username, agg);
+  return results.map(r => r ? r.points : 0);
+}
+
+async function aggregateStudiesWithGapDays(username: string, aggregate: {}[]) {
+  const results = await db.collection(username+"_studies").aggregate(aggregate).toArray();
+  results.forEach(r => r["date"] = r["_id"]["year"]+"/"+r["_id"]["month"]+"/"+r["_id"]["day"])
+  let dates = getAllDatesBetween(results[0].date, _.last(results).date).map(d => toYMDString(d));
+  return dates.map(d => results.filter(r => r.date == d)[0]);
 }
 
 export function getTotalPoints(username): Promise<number> {
@@ -160,7 +186,9 @@ export async function findReviewByDirection(username) {
 
 export async function getMemoryByDirection(username) {
   let groups = await db.collection(username+"_memories").aggregate([
-    { $group: { _id: { set: "$set", dir: "$direction"}, count: { $sum: 1 } } }
+    //{ $group: { _id: { set: "$set", dir: "$direction"}, count: { $sum: 1 } } }
+    //actually get max word id so that it includes ignored hiragana reading ones
+    { $group: { _id: { set: "$set", dir: "$direction"}, count: { $max: "$wordId" } } }
   ]).toArray();
   return mapToSets(groups);
 }
@@ -199,4 +227,21 @@ export async function toInt(coll: string, field: string) {
   let recs = await db.collection(coll).find().toArray();
   recs.forEach(x =>
     db.collection(coll).update({_id: x._id}, {$set: {[field]: parseInt(x[field])}}));
+}
+
+function getAllDatesBetween(fromDate: string, toDate: string) {
+  const dates: Date[] = [];
+  let currentDate = new Date(fromDate);
+  currentDate.setHours(12); //to handle daylight savings
+  const endDate = new Date(toDate);
+  endDate.setHours(23);
+  while (currentDate <= endDate) {
+    dates.push(new Date(currentDate));
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  return dates;
+}
+
+function toYMDString(date: Date) {
+  return date.getFullYear()+"/"+(date.getMonth()+1)+"/"+date.getDate();
 }

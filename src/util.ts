@@ -4,7 +4,7 @@ const words = ['the','and','with','at','to','for','a','up'];
 const endings = ['th','te','ed','ly','ty','al','ing','ment','ness','icity','tion','ous','t','e','s'];
 
 export function createAnswers(entry: string): string[] {
-  return entry.replace(/ *\([^)]*\) */g, "") //remove parentheses
+  return entry.replace(/ *\([^)]*\)*/g, "") //remove parentheses
     .replace(/ *\[[^\]]*]/g, "") //remove square brackets
     .replace(/;/g, ",") //semicolons to commas
     .split(',') //split alternatives
@@ -12,7 +12,7 @@ export function createAnswers(entry: string): string[] {
 }
 
 export function normalizeSingleAnswer(answer: string): string {
-  answer = answer.replace(/ *\([^)]*\) */g, "") //remove parentheses
+  answer = answer.replace(/ *\([^)]*\)*/g, "") //remove parentheses
   return normalizeAnswer(answer);
 }
 

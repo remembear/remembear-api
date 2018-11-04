@@ -29,6 +29,7 @@ export interface UserStatus {
   pointsPerDay: number[],
   durationPerDay: number[],
   studiesPerDay: number[],
+  newPerDay: number[],
   thinkingPerDay: number[],
   latestPoints: number
 }

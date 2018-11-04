@@ -12,7 +12,8 @@ export interface DbStudy {
   direction: number,
   startTime: Date,
   endTime: Date,
-  points: number
+  points: number,
+  thinkingTime: number
 }
 
 export interface MemoryFilter {

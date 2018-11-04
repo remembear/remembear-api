@@ -6,7 +6,8 @@ import { User, Set, Direction, Question, Study, UserStatus, Answer, Attempt } fr
 import { AUDIO_LOCATION, SETS, STUDY_TYPE, VOC_KNA } from './consts';
 import { createAnswers } from './util';
 import { findSimilarKanjis } from './similarity';
-
+//levels/avgdays: 1:.5, 2:1.5, 3:4.5, 4:10.5, 5:21, 6:42, 7:84, 8:168, 9:336
+//current levels/days: 1:0-1, 2:1-2, 3:2-7, 4:7-14, 5:14-28, 6:28-56, 7:56-108, 8:108-216, 9:216-432
 //words come back after about LEVEL_FACTOR*2^(level-1) days, e.g. 6: [(1),6,12,24,48,..]
 const LEVEL_FACTOR = 7;
 
@@ -19,7 +20,8 @@ export async function getUserStatus(username: string, latestPoints?: number): Pr
     pointsPerDay: await db.getPointsPerDay(username),
     durationPerDay: await db.getDurationPerDay(username),
     studiesPerDay: await db.getStudiesPerDay(username),
-    thinkingPerDay: await db.getThinktimePerDay(username),
+    newPerDay: await db.getNewPerDay(username),
+    thinkingPerDay: await db.getThinkingTimePerDay(username),
     latestPoints: latestPoints ? latestPoints : 0
   }
   return status
@@ -58,9 +60,10 @@ export async function addResults(username: string, study: Study): Promise<UserSt
   let studyId = await db.insertStudy(username, dbStudy);
   let points = _.sum(await Promise.all(study.answers
       .map(a => updateMemory(username, study, studyId, a))));
-  await db.updateStudy(username, dbStudy, points);
+  let thinkingTime = _.sum(_.flatten(study.answers.map(a => a.attempts.map(t => t.duration))));
+  await db.updateStudyPoints(username, studyId, points);
+  await db.updateStudyThinkingTime(username, studyId, thinkingTime);
   return getUserStatus(username, points);
-
 }
 
 function toDbStudy(study: Study): DbStudy {
@@ -70,7 +73,8 @@ function toDbStudy(study: Study): DbStudy {
     direction: study.direction,
     startTime: new Date(study.startTime),
     endTime: new Date(study.endTime),
-    points: 0 //placeholder
+    points: 0, //placeholder
+    thinkingTime: 0 //placeholder
   }
 }
 
@@ -137,10 +141,10 @@ async function getAltAnswers(entries: {}[], set: Set, dirIndex: number) {
 
 function toQuestion(entry: {}, set: Set, dirIndex: number, altAnswers: {}[]): Question {
   const dir = set.directions[dirIndex];
-  const answers = _.flatten([entry[dir.answer]].concat(
+  const answers = _.flatten([entry].concat(
     altAnswers.filter(a => a[dir.question] === entry[dir.question]
-      || (a[dir.question].length && a[dir.question].indexOf(entry[dir.question]) >= 0))
-    .map(a => createAnswers(a[dir.answer]))));
+      || (a[dir.question].length && a[dir.question].indexOf(entry[dir.question]) >= 0)))
+    .map(a => createAnswers(a[dir.answer])));
   return {
     wordId: entry[set.idField],
     question: entry[dir.question],

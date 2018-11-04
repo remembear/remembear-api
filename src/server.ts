@@ -4,6 +4,7 @@ import * as db from './db';
 import * as qrs from './queries';
 import { SETS } from './consts';
 import * as sim from './similarity';
+import * as util from './util';
 
 const PORT = process.env.PORT || 8060;
 
@@ -50,18 +51,32 @@ async function init() {
     console.log('remembear server live on ' + PORT);
   });
 
+  console.log(await db.getMemoryByDirection('furotaru'))
+  //console.log(await db.getNewPerDay('furotaru'));
+  //console.log(await util.normalizeSingleAnswer('warm up'))
+  //console.log(await util.createAnswers('warm (something) up'))
+  //await db.updateMany('furotaru_studies', {}, { $rename: { 'thinktime': 'thinkingTime' } } )
+  /*console.log(await db.getThinkingTimePerDay2('metrik'))
+  await db.updateAllStudyThinkingTimes('metrik')
+  console.log(await db.getThinkingTimePerDay2('metrik'))*/
+  //console.log('done')
+  /*console.log(new Date(Date.now()))
+  await qrs.getUserStatus('furotaru');
+  console.log(new Date(Date.now()))*/
+  //await db.updateAllStudyThinkingTimes('furotaru');
+  //console.log('done');
   /*console.log(await sim.testSimilarKanji('忙'));
   console.log(await sim.testSimilarKanji('悪'));
   console.log(await sim.testSimilarKanji('倍'));
   console.log(await sim.testSimilarKanji('特'));*/
   //await sim.createSimilarKanjiCollection();
-  //await qrs.getNewQuestions('test', 0, 1)
+  //await qrs.getNewQuestions('test', 0, 0)
   //console.log(await db.findMaxIdInMemory('test', 'core10k', 0));
   //console.log(await db.findReviewByDirection('test'));
   //console.log(await db.getMemoryByDirection('test'));
   //console.log(await db.getDurationByDay('furotaru'));
   //console.log(await db.getStudiesByDay('furotaru'));
-  //console.log(await db.getThinktimeByDay('furotaru'));
+  //console.log(await db.getThinkingTimePerDay('test'));
   //console.log(await db.findAlternativeAnswers(SETS[0].collection, SETS[0].directions[1][0], SETS[0].directions[1][1]));
   //console.log(await db.findAlternativeAnswers(SETS[1].collection, SETS[1].directions[1][0], SETS[1].directions[1][1]));
   /*console.log(JSON.stringify(await Promise.all(SETS.map((s,i) =>
