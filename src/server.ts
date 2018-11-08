@@ -52,7 +52,8 @@ async function init() {
   });
 
   console.log(await db.getMemoryByDirection('furotaru'))
-  //console.log(await db.getNewPerDay('furotaru'));
+  //console.log(JSON.stringify(await db.getNewPerDay('furotaru')));
+  //console.log(JSON.stringify(await db.getStudiesPerDay('furotaru')));
   //console.log(await util.normalizeSingleAnswer('warm up'))
   //console.log(await util.createAnswers('warm (something) up'))
   //await db.updateMany('furotaru_studies', {}, { $rename: { 'thinktime': 'thinkingTime' } } )

@@ -47,7 +47,7 @@ export const SETS: Set[] = [{
   ],
   info: ["Part of speech", "Word-type", "Vocab-RTK"],
   audio: VOC_AUD
-}, {
+}]/*, {
   name: "Sentences",
   collection: "core10k",
   idField: "2k1-Kanken Opt Sort",
@@ -67,4 +67,4 @@ export const SETS: Set[] = [{
   ],
   info: [],
   audio: SEN_AUD
-}];
+}];*/
