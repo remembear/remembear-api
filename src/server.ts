@@ -45,6 +45,10 @@ app.post('/results', async (req, res) => {
   res.send(await qrs.addResults(req.query.username, req.body));
 });
 
+app.post('/edit', async (req, res) => {
+  res.send(await db.insertEdit(req.query.username, req.body));
+});
+
 async function init() {
   await db.connect();
   app.listen(PORT, () => {
@@ -52,6 +56,7 @@ async function init() {
   });
 
   console.log(await db.getMemoryByDirection('furotaru'))
+  //console.log(await db.findEdits('test', 0, 0, 9))
   //console.log(await qrs.getUserStatus('test2'))
   //console.log(JSON.stringify(await db.getNewPerDay('furotaru')));
   //console.log(JSON.stringify(await db.getStudiesPerDay('furotaru')));

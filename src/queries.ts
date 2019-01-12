@@ -1,8 +1,8 @@
 import * as _ from 'lodash';
 import { ObjectID } from 'mongodb';
 import * as db from './db';
-import { Memory, MemoryFilter, MemoryUpdate, DbStudy, DbAnswer } from './db-types';
-import { User, Set, Direction, Question, Study, UserStatus, Answer, Attempt } from './types';
+import { Memory, MemoryFilter, DbStudy } from './db-types';
+import { Set, Question, Study, UserStatus, Answer, Attempt } from './types';
 import { AUDIO_LOCATION, SETS, STUDY_TYPE, VOC_KNA } from './consts';
 import { createAnswers } from './util';
 import { findSimilarKanjis } from './similarity';
@@ -39,7 +39,7 @@ export async function getNewQuestions(username: string, setIndex: number, direct
     [set.idField]: {$nin: known, $ne: NaN},
     $where: 'this["'+dir.question+'"] != this["'+dir.answer+'"]'
   }, SETS[setIndex].idField);
-  return toStudy(entries, set, direction, STUDY_TYPE.NEW);
+  return toStudy(username, entries, set, direction, STUDY_TYPE.NEW);
 }
 
 export async function getReviewQuestions(username: string, setIndex: number, direction: number): Promise<Study> {
@@ -51,7 +51,7 @@ export async function getReviewQuestions(username: string, setIndex: number, dir
     _.remove(mems, m => m === _.last(reviews));
   }
   let entries = await Promise.all(reviews.map(r => db.findOne(set.collection, {[set.idField]: r})));
-  return toStudy(entries, set, direction, STUDY_TYPE.REVIEW);
+  return toStudy(username, entries, set, direction, STUDY_TYPE.REVIEW);
 }
 
 //returns points made
@@ -97,10 +97,11 @@ async function updateMemory(username: string, study: Study, studyId: ObjectID, a
   return memory.level;
 }
 
-async function toStudy(entries: {}[], set: Set, dirIndex: number, type: STUDY_TYPE): Promise<Study> {
-  let altAnswers = await getAltAnswers(entries, set, dirIndex);
-  let questions = entries.map(w => toQuestion(w, set, dirIndex, altAnswers));
-  let numOptions = set.directions[dirIndex].numOptions;
+async function toStudy(username: string, entries: {}[], set: Set, dirIndex: number, type: STUDY_TYPE): Promise<Study> {
+  const altAnswers = await getAltAnswers(entries, set, dirIndex);
+  const edits = await getEdits(username, entries, set, dirIndex);
+  const questions = await Promise.all(entries.map((e,i) => toQuestion(e, set, dirIndex, altAnswers, edits[i])));
+  const numOptions = set.directions[dirIndex].numOptions;
   if (numOptions) {
     let options = await findSimilarKanjis(questions.map(q => q.answers[0]));
     options.forEach(o => o.similars = o.similars.slice(0, numOptions-1));//_.sampleSize(o.similars, numOptions));
@@ -139,12 +140,18 @@ async function getAltAnswers(entries: {}[], set: Set, dirIndex: number) {
   return altAnswers.filter(a => as.indexOf(a[dir.answer]) < 0);
 }
 
-function toQuestion(entry: {}, set: Set, dirIndex: number, altAnswers: {}[]): Question {
+function getEdits(username: string, entries: {}[], set: Set, dirIndex: number) {
+  return Promise.all(entries.map(e =>
+    db.findEdits(username, SETS.indexOf(set), dirIndex, e[set.idField])));
+}
+
+function toQuestion(entry: {}, set: Set, dirIndex: number, altAnswers: {}[], edits: string[]): Question {
   const dir = set.directions[dirIndex];
-  const answers = _.flatten([entry].concat(
+  let answers = _.flatten([entry].concat(
     altAnswers.filter(a => a[dir.question] === entry[dir.question]
       || (a[dir.question].length && a[dir.question].indexOf(entry[dir.question]) >= 0)))
     .map(a => createAnswers(a[dir.answer])));
+  answers = answers.concat(edits);
   return {
     wordId: entry[set.idField],
     question: entry[dir.question],

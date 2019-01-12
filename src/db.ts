@@ -1,7 +1,8 @@
 import * as _ from 'lodash';
 import { MongoClient, Db, ObjectID } from 'mongodb';
 import { URL } from './config';
-import { DbUser, Memory, MemoryFilter, MemoryUpdate,　DbStudy, DbAnswer } from './db-types';
+import { Edit } from './types';
+import { DbUser, Memory, MemoryFilter, MemoryUpdate,　DbStudy } from './db-types';
 import { SETS } from './consts';
 
 let db: Db;
@@ -54,6 +55,15 @@ export function insertMemory(username: string, memory: MemoryFilter) {
 
 export function updateMemory(username: string, memory: MemoryFilter, update: MemoryUpdate) {
   return db.collection(username+"_memories").updateOne(memory, { $set: update });
+}
+
+export function insertEdit(username: string, edit: Edit) {
+  return db.collection(username+"_edits").insertOne(edit);
+}
+
+export async function findEdits(username: string, set: number, direction: number, wordId: number) {
+  const edits: Edit[] = await find(username+"_edits", {set: set, direction: direction, wordId: wordId});
+  return edits.map(e => e.answer);
 }
 
 export async function updateAllStudyThinkingTimes(username: string): Promise<any> {

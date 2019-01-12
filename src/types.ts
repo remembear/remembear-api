@@ -64,3 +64,10 @@ export interface Attempt {
   answer: string,
   duration: number
 }
+
+export interface Edit {
+  set: number,
+  direction: number,
+  wordId: number,
+  answer: string
+}
