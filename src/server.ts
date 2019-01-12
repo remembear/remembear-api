@@ -52,6 +52,7 @@ async function init() {
   });
 
   console.log(await db.getMemoryByDirection('furotaru'))
+  //console.log(await qrs.getUserStatus('test2'))
   //console.log(JSON.stringify(await db.getNewPerDay('furotaru')));
   //console.log(JSON.stringify(await db.getStudiesPerDay('furotaru')));
   //console.log(await util.normalizeSingleAnswer('warm up'))

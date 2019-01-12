@@ -78,7 +78,7 @@ export async function getStudiesPerDay(username): Promise<number[]> {
     { $sort: { _id: 1 } }
   ];
   const results = await aggregateStudiesWithGapDays(username, agg);
-  return results.map(r => r ? r.count : 0);
+  return results ? results.map(r => r ? r.count : 0) : [0];
 }
 
 export async function getNewPerDay(username): Promise<number[]> {
@@ -90,7 +90,7 @@ export async function getNewPerDay(username): Promise<number[]> {
     { $sort: { _id: 1 } }
   ];
   const results = await aggregateStudiesWithGapDays(username, agg);
-  return results.map(r => r ? r.count : 0);
+  return results ? results.map(r => r ? r.count : 0) : [0];
 }
 
 export async function getDurationPerDay(username): Promise<number[]> {
@@ -101,7 +101,7 @@ export async function getDurationPerDay(username): Promise<number[]> {
     { $sort: { _id: 1 } }
   ];
   const results = await aggregateStudiesWithGapDays(username, agg);
-  return results.map(r => r ? r.duration / 1000 / 60 : 0);
+  return results ? results.map(r => r ? r.duration / 1000 / 60 : 0) : [0];
 }
 
 export async function getThinkingTimePerDay(username: string): Promise<number[]> {
@@ -112,7 +112,7 @@ export async function getThinkingTimePerDay(username: string): Promise<number[]>
     { $sort: { _id: 1 } }
   ];
   const results = await aggregateStudiesWithGapDays(username, agg);
-  return results.map(r => r ? r.thinkingTime / 1000 / 60 : 0);
+  return results ? results.map(r => r ? r.thinkingTime / 1000 / 60 : 0) : [0];
 }
 
 export async function getPointsPerDay(username): Promise<number[]> {
@@ -123,16 +123,18 @@ export async function getPointsPerDay(username): Promise<number[]> {
     { $sort: { _id: 1 } }
   ];
   const results = await aggregateStudiesWithGapDays(username, agg);
-  return results.map(r => r ? r.points : 0);
+  return results ? results.map(r => r ? r.points : 0) : [0];
 }
 
 async function aggregateStudiesWithGapDays(username: string, aggregate: {}[]) {
   const lastStudy = await getLastStudy(username);
-  const lastDate = toYMDString(new Date(lastStudy.endTime));
-  const results = await db.collection(username+"_studies").aggregate(aggregate).toArray();
-  results.forEach(r => r["date"] = r["_id"]["year"]+"/"+r["_id"]["month"]+"/"+r["_id"]["day"])
-  let dates = getAllDatesBetween(results[0].date, lastDate).map(d => toYMDString(d));
-  return dates.map(d => results.filter(r => r.date == d)[0]);
+  if (lastStudy) {
+    const lastDate = toYMDString(new Date(lastStudy.endTime));
+    const results = await db.collection(username+"_studies").aggregate(aggregate).toArray();
+    results.forEach(r => r["date"] = r["_id"]["year"]+"/"+r["_id"]["month"]+"/"+r["_id"]["day"])
+    let dates = getAllDatesBetween(results[0].date, lastDate).map(d => toYMDString(d));
+    return dates.map(d => results.filter(r => r.date == d)[0]);
+  }
 }
 
 async function getLastStudy(username) {
