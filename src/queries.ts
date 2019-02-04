@@ -150,8 +150,9 @@ function toQuestion(entry: {}, set: Set, dirIndex: number, altAnswers: {}[], edi
   let answers = _.flatten([entry].concat(
     altAnswers.filter(a => a[dir.question] === entry[dir.question]
       || (a[dir.question].length && a[dir.question].indexOf(entry[dir.question]) >= 0)))
-    .map(a => createAnswers(a[dir.answer])));
-  answers = answers.concat(edits);
+    .map(a => a[dir.answer])
+    .concat(edits)
+    .map(a => createAnswers(a)));
   return {
     wordId: entry[set.idField],
     question: entry[dir.question],

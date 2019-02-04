@@ -55,7 +55,7 @@ async function init() {
     console.log('remembear server live on ' + PORT);
   });
 
-  console.log(await db.getMemoryByDirection('furotaru'))
+  //console.log(await db.getMemoryByDirection('furotaru'))
   //console.log(await db.findEdits('test', 0, 0, 9))
   //console.log(await qrs.getUserStatus('test2'))
   //console.log(JSON.stringify(await db.getNewPerDay('furotaru')));
@@ -77,7 +77,7 @@ async function init() {
   console.log(await sim.testSimilarKanji('倍'));
   console.log(await sim.testSimilarKanji('特'));*/
   //await sim.createSimilarKanjiCollection();
-  //await qrs.getNewQuestions('test', 0, 0)
+  //console.log((await qrs.getReviewQuestions('test', 1, 2)).questions.map(r => r.answers))
   //console.log(await db.findMaxIdInMemory('test', 'core10k', 0));
   //console.log(await db.findReviewByDirection('test'));
   //console.log(await db.getMemoryByDirection('test'));
