@@ -41,16 +41,18 @@ app.get('/review', async (req, res) => {
     parseInt(req.query.setIndex), parseInt(req.query.dirIndex)));
 });
 
+app.get('/delay', async (req, res) => {
+  await db.delayMemories(req.query.username);
+  console.log(await db.findOne('test_memories', {}))
+  res.send();
+});
+
 app.post('/results', async (req, res) => {
   res.send(await qrs.addResults(req.query.username, req.body));
 });
 
 app.post('/edit', async (req, res) => {
   res.send(await db.insertEdit(req.query.username, req.body));
-});
-
-app.post('/delay', async (req, res) => {
-  res.send(await db.delayMemories(req.query.username));
 });
 
 async function init() {
