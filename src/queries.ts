@@ -99,8 +99,8 @@ async function updateMemory(username: string, study: Study, studyId: ObjectID, a
 
 async function toStudy(username: string, entries: {}[], set: Set, dirIndex: number, type: STUDY_TYPE): Promise<Study> {
   const altAnswers = await getAltAnswers(entries, set, dirIndex);
-  const edits = await getEdits(username, entries, set, dirIndex);
-  const questions = await Promise.all(entries.map((e,i) => toQuestion(e, set, dirIndex, altAnswers, edits[i])));
+  const questions = await Promise.all(entries.map(e =>
+    toQuestion(username, e, set, dirIndex, altAnswers)));
   const numOptions = set.directions[dirIndex].numOptions;
   if (numOptions) {
     let options = await findSimilarKanjis(questions.map(q => q.answers[0]));
@@ -145,14 +145,14 @@ function getEdits(username: string, entries: {}[], set: Set, dirIndex: number) {
     db.findEdits(username, SETS.indexOf(set), dirIndex, e[set.idField])));
 }
 
-function toQuestion(entry: {}, set: Set, dirIndex: number, altAnswers: {}[], edits: string[]): Question {
+async function toQuestion(username: string, entry: {}, set: Set, dirIndex: number, altAnswers: {}[]): Promise<Question> {
   const dir = set.directions[dirIndex];
-  let answers = _.flatten([entry].concat(
-    altAnswers.filter(a => a[dir.question] === entry[dir.question]
-      || (a[dir.question].length && a[dir.question].indexOf(entry[dir.question]) >= 0)))
-    .map(a => a[dir.answer])
-    .concat(edits)
-    .map(a => createAnswers(a)));
+  const allEntries = [entry];
+  allEntries.push(...altAnswers.filter(a => a[dir.question] === entry[dir.question]
+    || (a[dir.question].length && a[dir.question].indexOf(entry[dir.question]) >= 0)));
+  const edits = _.flatten(await getEdits(username, allEntries, set, dirIndex));
+  const answers = _.flatten(_.uniq(allEntries.map(a => a[dir.answer])
+    .concat(edits)).map(a => createAnswers(a)));
   return {
     wordId: entry[set.idField],
     question: entry[dir.question],

@@ -49,12 +49,19 @@ app.post('/edit', async (req, res) => {
   res.send(await db.insertEdit(req.query.username, req.body));
 });
 
+app.post('/delay', async (req, res) => {
+  res.send(await db.delayMemories(req.query.username));
+});
+
 async function init() {
   await db.connect();
   app.listen(PORT, () => {
     console.log('remembear server live on ' + PORT);
   });
 
+  /*console.log(await db.findOne('metrik_memories', {}))
+  await db.delayMemories('metrik');
+  console.log(await db.findOne('metrik_memories', {}))*/
   //console.log(await db.getMemoryByDirection('furotaru'))
   //console.log(await db.findEdits('test', 0, 0, 9))
   //console.log(await qrs.getUserStatus('test2'))

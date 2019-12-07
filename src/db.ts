@@ -57,6 +57,14 @@ export function updateMemory(username: string, memory: MemoryFilter, update: Mem
   return db.collection(username+"_memories").updateOne(memory, { $set: update });
 }
 
+export async function delayMemories(username: string) {
+  const bulk = db.collection(username+"_memories").initializeUnorderedBulkOp();
+  const nextUps = await find(username+"_memories", {}, {nextUp: 1});
+  nextUps.forEach(n => bulk.find({_id: n._id})
+    .updateOne({$set : { nextUp: new Date(n.nextUp.getTime() - 86400000) } }));
+  return bulk.execute();
+}
+
 export function insertEdit(username: string, edit: Edit) {
   return db.collection(username+"_edits").insertOne(edit);
 }
