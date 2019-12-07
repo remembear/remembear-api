@@ -3,7 +3,8 @@ import { User, Attempt } from './types';
 
 export interface DbUser extends User {
   password: string,
-  created: Date
+  created: Date,
+  delays: number
 }
 
 export interface DbStudy {

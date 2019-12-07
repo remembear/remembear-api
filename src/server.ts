@@ -61,9 +61,9 @@ async function init() {
     console.log('remembear server live on ' + PORT);
   });
 
-  /*console.log(await db.findOne('metrik_memories', {}))
-  await db.delayMemories('metrik');
-  console.log(await db.findOne('metrik_memories', {}))*/
+  /*console.log(await db.findOne('test_memories', {}))
+  await db.delayMemories('test');
+  console.log(await db.findOne('test_memories', {}))*/
   //console.log(await db.getMemoryByDirection('furotaru'))
   //console.log(await db.findEdits('test', 0, 0, 9))
   //console.log(await qrs.getUserStatus('test2'))

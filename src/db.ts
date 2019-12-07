@@ -62,6 +62,7 @@ export async function delayMemories(username: string) {
   const nextUps = await find(username+"_memories", {}, {nextUp: 1});
   nextUps.forEach(n => bulk.find({_id: n._id})
     .updateOne({$set : { nextUp: new Date(n.nextUp.getTime() + 86400000) } }));
+  await db.collection("users").updateOne({username: username}, { $inc: {delays: 1} })
   return bulk.execute();
 }
 
@@ -247,7 +248,8 @@ function createUser(username: string, password: string): DbUser {
   return {
     username: username,
     password: password,
-    created: new Date(Date.now())
+    created: new Date(Date.now()),
+    delays: 0
   }
 }
 
