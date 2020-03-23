@@ -43,7 +43,11 @@ app.get('/review', async (req, res) => {
 
 app.get('/delay', async (req, res) => {
   await db.delayMemories(req.query.username);
-  console.log(await db.findOne('test_memories', {}))
+  res.send();
+});
+
+app.get('/expedite', async (req, res) => {
+  await db.expediteMemories(req.query.username);
   res.send();
 });
 
