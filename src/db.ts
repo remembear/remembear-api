@@ -20,8 +20,9 @@ export function findOne(collection: string, filter: {}) {
   return db.collection(collection).findOne(filter);
 }
 
-export function findTen(collection: string, query?: {}, sortField?: string) {
-  let sort = sortField ? {[sortField]: 1} : {};
+export function findTen(collection: string, query?: {}, sortFields?: string[]) {
+  let sort = {};
+  sortFields.forEach(s => sort[s] = 1);
   return db.collection(collection).find(query).sort(sort).limit(10).toArray();
 }
 
@@ -266,6 +267,10 @@ export async function toInt(coll: string, field: string) {
   let recs = await db.collection(coll).find().toArray();
   recs.forEach(x =>
     db.collection(coll).update({_id: x._id}, {$set: {[field]: parseInt(x[field])}}));
+}
+
+export async function updateOne(coll: string, filter: Object, update: Object) {
+  return db.collection(coll).updateOne(filter, update);
 }
 
 function getAllDatesBetween(fromDate: string, toDate: string) {

@@ -65,6 +65,7 @@ async function init() {
     console.log('remembear server live on ' + PORT);
   });
 
+  //console.log(await qrs.getNewQuestions('test', 0, 0))
   /*console.log(await db.findOne('test_memories', {}))
   await db.delayMemories('test');
   console.log(await db.findOne('test_memories', {}))*/

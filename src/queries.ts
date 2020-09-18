@@ -38,7 +38,7 @@ export async function getNewQuestions(username: string, setIndex: number, direct
   let entries = await db.findTen(set.collection, {
     [set.idField]: {$nin: known, $ne: NaN},
     $where: 'this["'+dir.question+'"] != this["'+dir.answer+'"]'
-  }, SETS[setIndex].idField);
+  }, [SETS[setIndex].idField]);
   return toStudy(username, entries, set, direction, STUDY_TYPE.NEW);
 }
 
