@@ -26,6 +26,12 @@ export function findTen(collection: string, query?: {}, sortFields?: string[]) {
   return db.collection(collection).find(query).sort(sort).limit(10).toArray();
 }
 
+export function findRandom(collection: string, count: number) {
+  return db.collection(collection).aggregate(
+    [ { $sample: { size: count } } ]
+  ).toArray();
+}
+
 export function find(collection: string, query?: {}, projection?: {}) {
   return db.collection(collection).find(query).project(projection).toArray();
 }

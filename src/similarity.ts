@@ -7,10 +7,12 @@ const RADICALS = "Japan Primitive Look-up"//"Primitive look-up data.";
 const STROKES = "stroke count";
 const KANJI_SIMS = "kanji_sims";
 
+const NUM_SIMILARS = 50;
+
 export async function createSimilarKanjiCollection() {
   let allKanji = await getAllKanjiWithRadicals();
   console.log("all kanji found")
-  let similars = allKanji.map(k => getSimilarKanji(k, allKanji, 50));
+  let similars = allKanji.map(k => getSimilarKanji(k, allKanji, NUM_SIMILARS));
   console.log("sims calculated")
   await db.insert(KANJI_SIMS, similars);
   console.log("done!")
@@ -18,6 +20,15 @@ export async function createSimilarKanjiCollection() {
 
 export async function findSimilarKanjis(kanjis: string[]): Promise<Similars[]> {
   let similars = await db.find(KANJI_SIMS, {original: {$in: kanjis}}, {_id: 0, original: 1, similars: 1});
+  const found = similars.map(s => s.original);
+  await Promise.all(kanjis.map(async k => {
+    if (found.indexOf(k) == -1) {
+      similars.push({
+        original: k,
+        similars: (await db.findRandom("kanji", NUM_SIMILARS)).map(k => k[KANJI])
+      });
+    }
+  }));
   return similars;
 }
 
