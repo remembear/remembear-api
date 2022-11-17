@@ -2,9 +2,9 @@ import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import * as db from './db';
 import * as qrs from './queries';
-import { SETS } from './consts';
-import * as sim from './similarity';
-import * as util from './util';
+// import { SETS } from './consts';
+// import * as sim from './similarity';
+// import * as util from './util';
 
 const PORT = process.env.PORT || 8060;
 
@@ -13,7 +13,7 @@ app.use(bodyParser.json());
 app.use(express.static('data/audio-words/'));
 app.use(express.static('data/audio-sentences/'));
 
-app.use((req, res, next) => {
+app.use((_, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
@@ -23,40 +23,40 @@ app.get('/login', async (req, res) => {
   res.send(await db.checkLogin(req.query.username, req.query.password));
 });
 
-app.get('/test', async (req, res) => {
+app.get('/test', async (_, res) => {
   res.send(await qrs.getUserStatus('test'));
 });
 
 app.get('/status', async (req, res) => {
-  res.send(await qrs.getUserStatus(req.query.username));
+  res.send(await qrs.getUserStatus(req.query.username as string));
 });
 
 app.get('/new', async (req, res) => {
-  res.send(await qrs.getNewQuestions(req.query.username,
-    parseInt(req.query.setIndex), parseInt(req.query.dirIndex)));
+  res.send(await qrs.getNewQuestions(req.query.username as string,
+    parseInt(req.query.setIndex as string), parseInt(req.query.dirIndex as string)));
 });
 
 app.get('/review', async (req, res) => {
-  res.send(await qrs.getReviewQuestions(req.query.username,
-    parseInt(req.query.setIndex), parseInt(req.query.dirIndex)));
+  res.send(await qrs.getReviewQuestions(req.query.username as string,
+    parseInt(req.query.setIndex as string), parseInt(req.query.dirIndex as string)));
 });
 
 app.get('/delay', async (req, res) => {
-  await db.delayMemories(req.query.username);
+  await db.delayMemories(req.query.username as string);
   res.send();
 });
 
 app.get('/expedite', async (req, res) => {
-  await db.expediteMemories(req.query.username);
+  await db.expediteMemories(req.query.username as string);
   res.send();
 });
 
 app.post('/results', async (req, res) => {
-  res.send(await qrs.addResults(req.query.username, req.body));
+  res.send(await qrs.addResults(req.query.username as string, req.body));
 });
 
 app.post('/edit', async (req, res) => {
-  res.send(await db.insertEdit(req.query.username, req.body));
+  res.send(await db.insertEdit(req.query.username as string, req.body));
 });
 
 async function init() {
