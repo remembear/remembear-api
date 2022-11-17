@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import { MongoClient, Db, ObjectID } from 'mongodb';
-import { URL } from '../config';
+//import { URL } from '../config';
+import { URL } from '/etc/secrets/config';
 import { Edit } from './types';
 import { DbUser, Memory, MemoryFilter, MemoryUpdate,　DbStudy } from './db-types';
 import { SETS } from './consts';
