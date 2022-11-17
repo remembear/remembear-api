@@ -1,6 +1,6 @@
 node_modules/
 lib/
-src/config.js
+config.js
 audio-sentences/
 audio-words/
 *.xlsx
