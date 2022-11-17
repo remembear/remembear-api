@@ -9,7 +9,7 @@ import { SETS } from './consts';
 let db: Db;
 
 export function connect() {
-  return MongoClient.connect(URL)
+  return MongoClient.connect(URL, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(client => db = client.db('rememberize'));
 }
 
