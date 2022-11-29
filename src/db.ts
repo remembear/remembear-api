@@ -9,7 +9,8 @@ import { SETS } from './consts';
 let db: Db;
 
 export function connect() {
-  return MongoClient.connect(process.env.URL, { useNewUrlParser: true, useUnifiedTopology: true })
+  return MongoClient.connect(`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@remembear.ydlx4.mongodb.net/rememberize?retryWrites=true&w=majority`,
+    { useNewUrlParser: true, useUnifiedTopology: true })
     .then(client => db = client.db('rememberize'));
 }
 
