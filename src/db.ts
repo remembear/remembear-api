@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import { MongoClient, Db, ObjectID } from 'mongodb';
 //import { URL } from '../config';
-import { URL } from '/etc/secrets/config';
+//import { URL } from '/etc/secrets/config';
 import { Edit } from './types';
 import { DbUser, Memory, MemoryFilter, MemoryUpdate,　DbStudy } from './db-types';
 import { SETS } from './consts';
@@ -9,7 +9,7 @@ import { SETS } from './consts';
 let db: Db;
 
 export function connect() {
-  return MongoClient.connect(URL, { useNewUrlParser: true, useUnifiedTopology: true })
+  return MongoClient.connect(process.env.URL, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(client => db = client.db('rememberize'));
 }
 
