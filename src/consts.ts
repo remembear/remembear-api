@@ -1,6 +1,6 @@
 import { Set } from './types';
 
-export const AUDIO_LOCATION = "https://remembear-api.herokuapp.com/"//'http://localhost:8060/';
+export const AUDIO_LOCATION = "https://remembear2.onrender.com/"//'http://localhost:8060/';
 
 export enum STUDY_TYPE {
   NEW = "new",
